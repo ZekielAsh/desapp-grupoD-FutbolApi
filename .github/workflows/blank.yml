@@ -1,4 +1,4 @@
-name: Kotlin CI
+name: Kotlin CI with Gradle (no wrapper)
 
 on:
   push:
@@ -20,11 +20,11 @@ jobs:
         distribution: 'temurin'
         java-version: 21
 
-    - name: Grant execute permission to gradlew
-      run: chmod +x ./gradlew
+    - name: Set up Gradle
+      uses: gradle/gradle-build-action@v3
 
     - name: Build with Gradle
-      run: ./gradle build
+      run: gradle build
 
     - name: Run Tests
-      run: ./gradle test
+      run: gradle test

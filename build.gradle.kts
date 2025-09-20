@@ -54,3 +54,16 @@ sonar {
     property("sonar.organization", "zekielash")
   }
 }
+
+sourceSets {
+    test {
+        java.srcDirs("src/test/kotlin")
+        resources.srcDirs("src/test/resources")
+    }
+}
+
+tasks.test {
+    useJUnitPlatform()
+    // evita el error de zona horaria en cualquier SO
+    systemProperty("user.timezone", "UTC")
+}

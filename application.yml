@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/futbolapi?TimeZone=America/Buenos_Aires
+    url: jdbc:postgresql://localhost:5433/futbolapi
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -12,3 +12,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+football-data:
+  base-url: https://api.football-data.org/v4
+  api-key: ${FOOTBALL_DATA_API_KEY}

@@ -1,10 +1,11 @@
-package security
+package com.example.demo.security
 
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
-import repositories.UserRepository
+import com.example.demo.repositories.UserRepository
+import org.springframework.security.core.userdetails.User
 
 @Service
 class MyUserDetailsService(
@@ -15,10 +16,10 @@ class MyUserDetailsService(
         val user = userRepository.findByUsername(username)
             ?: throw UsernameNotFoundException("Usuario no encontrado")
 
-        return org.springframework.security.core.userdetails.User(
+        return User(
             user.username,
             user.password,
-            emptyList() // puedes agregar roles aquí
+            emptyList() // aquí podrías mapear roles
         )
     }
 }

@@ -1,13 +1,13 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/futbol-api
-    username: grupo-d-dapp
-    password: 12345678
+    url: jdbc:postgresql://localhost:5433/futbolapi?TimeZone=America/Buenos_Aires
+    username: postgres
+    password: postgres
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update # o validate, create-drop, etc.
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:

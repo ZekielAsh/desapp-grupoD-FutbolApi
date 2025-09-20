@@ -1,14 +1,13 @@
-version: '3.8'
 services:
   postgres:
     image: postgres:15
     container_name: postgres-db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
-      POSTGRES_USER: grupo-d-dapp
-      POSTGRES_PASSWORD: 12345678
-      POSTGRES_DB: futbol-api
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: futbolapi   # 👈 usa minúsculas
     volumes:
       - pgdata:/var/lib/postgresql/data
 

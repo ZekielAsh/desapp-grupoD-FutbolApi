@@ -1,4 +1,4 @@
-package security
+package com.example.demo.security
 
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
@@ -11,6 +11,7 @@ import java.util.Date
 @Service
 class JwtService {
 
+    // TODO: mover a variable de entorno en producción
     private val secretKey = "mi_clave_secreta_super_segura_que_debería_estar_en_ENV"
 
     fun extractUsername(token: String): String? =

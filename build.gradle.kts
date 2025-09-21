@@ -1,9 +1,12 @@
+import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
+
 plugins {
 	kotlin("jvm") version "1.9.25"
 	kotlin("plugin.spring") version "1.9.25"
 	id("org.springframework.boot") version "3.5.5"
 	id("io.spring.dependency-management") version "1.1.7"
 	id("org.sonarqube") version "6.3.1.5724"
+    id("jacoco")
 }
 
 group = "com.example"
@@ -18,6 +21,10 @@ java {
 
 repositories {
 	mavenCentral()
+}
+
+configure<JacocoPluginExtension> {
+    toolVersion = "0.8.12"
 }
 
 val jsonWebTokenVersion = "0.11.5"
@@ -72,4 +79,13 @@ tasks.test {
     useJUnitPlatform()
     // evita el error de zona horaria en cualquier SO
     systemProperty("user.timezone", "UTC")
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }

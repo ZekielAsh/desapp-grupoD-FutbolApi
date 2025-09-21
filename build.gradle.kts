@@ -30,6 +30,8 @@ configure<JacocoPluginExtension> {
 val jsonWebTokenVersion = "0.11.5"
 val swaggerVersion = "2.8.5"
 val h2Version = "2.3.232"
+val seleniumVersion = "4.15.0"
+val webDriverManagerVersion = "5.6.2"
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter")
@@ -40,6 +42,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation ("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${swaggerVersion}")
+    implementation("org.seleniumhq.selenium:selenium-java:$seleniumVersion")
+    implementation("io.github.bonigarcia:webdrivermanager:$webDriverManagerVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
     runtimeOnly("io.jsonwebtoken:jjwt-impl:$jsonWebTokenVersion")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jsonWebTokenVersion")

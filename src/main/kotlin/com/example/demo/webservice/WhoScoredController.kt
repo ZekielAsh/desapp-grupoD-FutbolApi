@@ -12,9 +12,9 @@ class WhoScoredController(
 ) {
 
     @GetMapping("/team-players")
-    fun getTeamPlayers(@RequestParam teamUrl: String): ResponseEntity<TeamPlayersResponse> {
+    fun getTeamPlayers(@RequestParam teamName: String): ResponseEntity<TeamPlayersResponse> {
         return try {
-            val response = whoScoredScrapingService.getTeamPlayers(teamUrl)
+            val response = whoScoredScrapingService.getTeamPlayersByName(teamName)
             ResponseEntity.ok(response)
         } catch (e: Exception) {
             ResponseEntity.badRequest().build()

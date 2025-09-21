@@ -31,4 +31,4 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
       - name: Build and run tests with coverage
-        run: ./gradlew clean build jacocoTestReport
+        run: gradle clean build jacocoTestReport

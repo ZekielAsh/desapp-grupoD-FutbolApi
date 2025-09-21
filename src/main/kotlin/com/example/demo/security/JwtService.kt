@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Service
 import java.util.Date
@@ -11,8 +12,8 @@ import java.util.Date
 @Service
 class JwtService {
 
-    // TODO: mover a variable de entorno en producción
-    private val secretKey = "mi_clave_secreta_super_segura_que_debería_estar_en_ENV"
+    @Value("\${jwt.secret}")
+    private lateinit var secretKey: String
 
     fun extractUsername(token: String): String? =
         extractClaim(token) { it.subject }

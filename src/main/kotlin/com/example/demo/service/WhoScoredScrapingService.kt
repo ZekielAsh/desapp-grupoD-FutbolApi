@@ -104,7 +104,7 @@ class WhoScoredScrapingService(private val webDriver: WebDriver) {
                 By.cssSelector("#top-player-stats-summary-grid tbody tr"), 0
             ))
 
-            val EDesc = "Equipo desconocido"
+            val eDesc = "Equipo desconocido"
             // Obtener nombre del equipo
             val teamName = try {
                 // Estrategia múltiple para obtener el nombre del equipo
@@ -144,9 +144,9 @@ class WhoScoredScrapingService(private val webDriver: WebDriver) {
                                     // Opción 6: Extraer del título de la página
                                     val pageTitle = webDriver.title
                                     if (pageTitle.contains(" - ")) {
-                                        pageTitle.split(" - ").firstOrNull()?.trim() ?: EDesc
+                                        pageTitle.split(" - ").firstOrNull()?.trim() ?: eDesc
                                     } else {
-                                        EDesc
+                                        eDesc
                                     }
                                 }
                             }
@@ -157,14 +157,14 @@ class WhoScoredScrapingService(private val webDriver: WebDriver) {
                 println("Nombre del equipo encontrado: '$name'")
 
                 // Validar que el nombre no esté vacío
-                if (name.isBlank() || name == EDesc) {
+                if (name.isBlank() || name == eDesc) {
                     // Último recurso: extraer del URL
                     val urlParts = teamUrl.split("/")
                     val lastPart = urlParts.lastOrNull() ?: ""
                     if (lastPart.contains("-")) {
                         lastPart.split("-").drop(1).joinToString(" ").replaceFirstChar { it.uppercaseChar() }
                     } else {
-                        EDesc
+                        eDesc
                     }
                 } else {
                     name
@@ -173,7 +173,7 @@ class WhoScoredScrapingService(private val webDriver: WebDriver) {
             } catch (e: Exception) {
                 println("Error obteniendo nombre del equipo: ${e.message}")
                 e.printStackTrace()
-                EDesc
+                eDesc
             }
 
 

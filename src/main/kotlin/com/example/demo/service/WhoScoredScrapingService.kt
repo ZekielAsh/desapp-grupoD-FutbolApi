@@ -16,20 +16,20 @@ class WhoScoredScrapingService(private val webDriver: WebDriver) {
 
     fun getTeamPlayersByName(teamName: String): TeamPlayersResponse {
         try {
-            // Buscar el equipo
+            // Search for the team
             val teamUrl = searchTeam(teamName)
 
-            // Obtener jugadores del equipo encontrado
+            // Get players from the found team
             return getTeamPlayers(teamUrl)
 
         } catch (e: Exception) {
-            throw RuntimeException("Error al buscar equipo '$teamName': ${e.message}", e)
+            throw RuntimeException("Error searching for team '$teamName': ${e.message}", e)
         }
     }
 
     private fun searchTeam(teamName: String): String {
         try {
-            // Construir URL de búsqueda
+            // Build search URL
             val encodedTeamName = URLEncoder.encode(teamName, "UTF-8")
             val searchUrl = "https://es.whoscored.com/search/?t=$encodedTeamName"
 
@@ -38,38 +38,38 @@ class WhoScoredScrapingService(private val webDriver: WebDriver) {
             val wait = WebDriverWait(webDriver, Duration.ofSeconds(15))
             val js = webDriver as JavascriptExecutor
 
-            // Esperar a que la página cargue completamente
+            // Wait for page to load completely
             wait.until {
                 js.executeScript("return document.readyState") == "complete"
             }
 
             Thread.sleep(3000)
 
-            // Buscar específicamente la sección de "Equipos:"
-            val equiposHeader = wait.until(ExpectedConditions.presenceOfElementLocated(
+            // Search specifically for the "Teams:" section
+            val teamHeader = wait.until(ExpectedConditions.presenceOfElementLocated(
                 By.xpath("//h2[contains(text(), 'Equipos:')]")
             ))
 
-            // Encontrar la tabla que sigue al header "Equipos:"
-            val equiposTable = equiposHeader.findElement(By.xpath("./following-sibling::table[1]"))
+            // Find the table that follows the "Teams:" header
+            val teamTable = teamHeader.findElement(By.xpath("./following-sibling::table[1]"))
 
-            // Buscar el primer enlace de equipo en esa tabla específica
-            val firstTeamLink = equiposTable.findElement(By.cssSelector("tbody tr td a[href*='/teams/']"))
+            // Search for the first team link in that specific table
+            val firstTeamLink = teamTable.findElement(By.cssSelector("tbody tr td a[href*='/teams/']"))
             val relativeUrl = firstTeamLink.getDomAttribute("href")
 
-            // Construir URL completa si es necesario
+            // Build complete URL if necessary
             val teamUrl = if (relativeUrl?.startsWith("http") == true) {
                 relativeUrl
             } else {
                 "https://es.whoscored.com$relativeUrl"
             }
 
-            println("Equipo encontrado: $teamUrl")
+            println("Team found: $teamUrl")
 
             return teamUrl
 
         } catch (e: Exception) {
-            throw RuntimeException("No se pudo encontrar el equipo '$teamName': ${e.message}", e)
+            throw RuntimeException("Could not find team '$teamName': ${e.message}", e)
         }
     }
 
@@ -77,76 +77,75 @@ class WhoScoredScrapingService(private val webDriver: WebDriver) {
         try {
             webDriver.get(teamUrl)
 
-            // Esperar a que la página cargue completamente
+            // Wait for page to load completely
             val wait = WebDriverWait(webDriver, Duration.ofSeconds(30))
             val js = webDriver as JavascriptExecutor
 
-            // Esperar a que el documento esté completamente cargado
+            // Wait for document to be completely loaded
             wait.until {
                 js.executeScript("return document.readyState") == "complete"
             }
 
-            // Esperar un poco más para que se ejecuten los scripts
+            // Wait a bit more for scripts to execute
             Thread.sleep(2000)
 
-            // Esperar a que aparezca la tabla
+            // Wait for the table to appear
             wait.until(ExpectedConditions.presenceOfElementLocated(By.id("top-player-stats-summary-grid")))
 
-            // Hacer scroll para asegurar que la tabla está visible
+            // Scroll to ensure the table is visible
             val table = webDriver.findElement(By.id("top-player-stats-summary-grid"))
             js.executeScript("arguments[0].scrollIntoView(true);", table)
 
-            // Esperar más tiempo para que se carguen las filas dinámicamente
+            // Wait more time for rows to load dynamically
             Thread.sleep(3000)
 
-            // Esperar específicamente a que haya filas en la tabla
+            // Wait specifically for rows to exist in the table
             wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(
                 By.cssSelector("#top-player-stats-summary-grid tbody tr"), 0
             ))
 
-            val eDesc = "Equipo desconocido"
-            // Obtener nombre del equipo
+            // Get team name
             val teamName = try {
-                // Estrategia múltiple para obtener el nombre del equipo
+                // Multiple strategy to get team name
                 val name = try {
-                    // Opción 1: XPath específico
+                    // Option 1: Specific XPath
                     val teamNameElement = wait.until(ExpectedConditions.presenceOfElementLocated(
                         By.xpath("//*[@id='layout-wrapper']/div[3]/div[1]/div[1]/h1/span")
                     ))
                     teamNameElement.text.trim()
                 } catch (e1: Exception) {
                     try {
-                        // Opción 2: Selector CSS más general
+                        // Option 2: More general CSS selector
                         val teamHeaderElement = wait.until(ExpectedConditions.presenceOfElementLocated(
                             By.cssSelector("h1.team-header span.team-header-name")
                         ))
                         teamHeaderElement.text.trim()
                     } catch (e2: Exception) {
                         try {
-                            // Opción 3: Cualquier span dentro de h1.team-header
+                            // Option 3: Any span inside h1.team-header
                             val headerElement = wait.until(ExpectedConditions.presenceOfElementLocated(
                                 By.cssSelector("h1.team-header span")
                             ))
                             headerElement.text.trim()
                         } catch (e3: Exception) {
                             try {
-                                // Opción 4: Buscar por clase team-header-name en cualquier lugar
+                                // Option 4: Search by team-header-name class anywhere
                                 val nameElement = webDriver.findElement(By.className("team-header-name"))
                                 nameElement.text.trim()
                             } catch (e4: Exception) {
                                 try {
-                                    // Opción 5: XPath más flexible
+                                    // Option 5: More flexible XPath
                                     val flexibleElement = webDriver.findElement(
                                         By.xpath("//h1[contains(@class, 'team-header')]//span[contains(@class, 'team-header-name') or position()=last()]")
                                     )
                                     flexibleElement.text.trim()
                                 } catch (e5: Exception) {
-                                    // Opción 6: Extraer del título de la página
+                                    // Option 6: Extract from page title
                                     val pageTitle = webDriver.title
                                     if (pageTitle.contains(" - ")) {
-                                        pageTitle.split(" - ").firstOrNull()?.trim() ?: eDesc
+                                        pageTitle.split(" - ").firstOrNull()?.trim() ?: "Unknown Team"
                                     } else {
-                                        eDesc
+                                        "Unknown Team"
                                     }
                                 }
                             }
@@ -154,89 +153,89 @@ class WhoScoredScrapingService(private val webDriver: WebDriver) {
                     }
                 }
 
-                println("Nombre del equipo encontrado: '$name'")
+                println("Team name found: '$name'")
 
-                // Validar que el nombre no esté vacío
-                if (name.isBlank() || name == eDesc) {
-                    // Último recurso: extraer del URL
+                // Validate that name is not empty
+                if (name.isBlank() || name == "Unknown Team") {
+                    // Last resort: extract from URL
                     val urlParts = teamUrl.split("/")
                     val lastPart = urlParts.lastOrNull() ?: ""
                     if (lastPart.contains("-")) {
                         lastPart.split("-").drop(1).joinToString(" ").replaceFirstChar { it.uppercaseChar() }
                     } else {
-                        eDesc
+                        "Unknown Team"
                     }
                 } else {
                     name
                 }
 
             } catch (e: Exception) {
-                println("Error obteniendo nombre del equipo: ${e.message}")
+                println("Error getting team name: ${e.message}")
                 e.printStackTrace()
-                eDesc
+                "Unknown Team"
             }
 
 
-            // Obtener todas las filas de la tabla
+            // Get all table rows
             val playerRows = webDriver.findElements(By.cssSelector("#top-player-stats-summary-grid tbody tr"))
 
-            println("Número de filas encontradas: ${playerRows.size}")
+            println("Number of rows found: ${playerRows.size}")
 
             val players = playerRows.mapIndexedNotNull { index, row ->
                 try {
                     val cells = row.findElements(By.tagName("td"))
-                    println("Fila $index: ${cells.size} celdas")
+                    println("Row $index: ${cells.size} cells")
 
                     if (cells.size >= 10) {
 
-                        // Obtener nombre del jugador
-                        val nombre = try {
+                        // Get player name
+                        val name = try {
                             cells[0].findElement(By.cssSelector("a.player-link, a")).text.trim()
                         } catch (_: Exception) {
                             cells[0].text.trim()
                         }
 
-                        if (nombre.isBlank() || nombre == "-") return@mapIndexedNotNull null
+                        if (name.isBlank() || name == "-") return@mapIndexedNotNull null
 
-                        // Obtener estadísticas con validación de índices
-                        val partidosText = cells.getOrNull(4)?.text?.trim() ?: "0"
-                        val golesText = cells.getOrNull(6)?.text?.trim() ?: "0"
-                        val asistenciasText = cells.getOrNull(7)?.text?.trim() ?: "0"
+                        // Get statistics with index validation
+                        val appearancesText = cells.getOrNull(4)?.text?.trim() ?: "0"
+                        val goalsText = cells.getOrNull(6)?.text?.trim() ?: "0"
+                        val assistsText = cells.getOrNull(7)?.text?.trim() ?: "0"
                         val ratingText = cells.getOrNull(14)?.text?.trim() ?: "0.0"
 
-                        // Limpiar el nombre del jugador (quitar número al inicio)
-                        val nombreLimpio = nombre.replace(Regex("^\\d+\\s*\\n?"), "").trim()
+                        // Clean player name (remove number at the beginning)
+                        val clearName = name.replace(Regex("^\\d+\\s*\\n?"), "").trim()
 
-                        // Parsear datos
-                        val partidos = partidosText // Mantener como String
-                        val goles = if (golesText == "-") 0 else golesText.toIntOrNull() ?: 0
-                        val asistencias = if (asistenciasText == "-") 0 else asistenciasText.toIntOrNull() ?: 0
+                        // Parse data
+                        val appearances = appearancesText // Keep as String
+                        val goals = if (goalsText == "-") 0 else goalsText.toIntOrNull() ?: 0
+                        val assists = if (assistsText == "-") 0 else assistsText.toIntOrNull() ?: 0
                         val rating = ratingText.toDoubleOrNull() ?: 0.0
 
-                        println("Jugador: $nombreLimpio - Partidos: $partidos - Goles: $goles - Asistencias: $asistencias - Rating: $rating")
+                        println("Player: $clearName - Appearances: $appearances - Goals: $goals - Assists: $assists - Rating: $rating")
 
                         PlayerStats(
-                            nombre = nombreLimpio,
-                            partidosJugados = partidos,
-                            goles = goles,
-                            asistencias = asistencias,
+                            name = clearName,
+                            appearances = appearances,
+                            goals = goals,
+                            assists = assists,
                             rating = rating
                         )
                     } else null
                 } catch (e: Exception) {
-                    println("Error procesando fila $index: ${e.message}")
+                    println("Error processing row $index: ${e.message}")
                     null
                 }
             }
 
-            println("Total de jugadores procesados: ${players.size}")
+            println("Total players processed: ${players.size}")
 
             return TeamPlayersResponse(teamName, players)
 
         } catch (e: Exception) {
-            println("Error general: ${e.message}")
+            println("General error: ${e.message}")
             e.printStackTrace()
-            throw RuntimeException("Error al obtener datos del equipo: ${e.message}", e)
+            throw RuntimeException("Error getting team data: ${e.message}", e)
         }
     }
 }

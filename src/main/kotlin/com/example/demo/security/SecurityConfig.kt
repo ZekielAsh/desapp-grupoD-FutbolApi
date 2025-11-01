@@ -29,7 +29,7 @@ class SecurityConfig(
         http
             .csrf { it.disable() }
             .authorizeHttpRequests {
-                it.requestMatchers(org.springframework.http.HttpMethod.GET, "/teams/*/players").authenticated()
+                it.requestMatchers(org.springframework.http.HttpMethod.GET, "/teams/*/players", "/*/next-matches", "/api/audit/*").authenticated()
                 it.requestMatchers(org.springframework.http.HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
                 it.requestMatchers("/auth/**").permitAll()
                 it.requestMatchers(

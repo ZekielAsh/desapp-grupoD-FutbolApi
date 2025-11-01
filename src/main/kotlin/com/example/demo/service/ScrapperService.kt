@@ -2,6 +2,8 @@ package com.example.demo.service
 
 import com.example.demo.model.PlayerStats
 import com.example.demo.model.TeamPlayersResponse
+import com.example.demo.model.football.CompetitionStats
+import com.example.demo.model.football.StatsData
 import org.openqa.selenium.By
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.JavascriptExecutor
@@ -10,9 +12,10 @@ import org.openqa.selenium.support.ui.ExpectedConditions
 import org.springframework.stereotype.Service
 import java.time.Duration
 import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Service
-class WhoScoredScrapingService(private val webDriver: WebDriver) {
+class ScrapperService(private val webDriver: WebDriver) {
 
     fun getTeamPlayersByName(teamName: String): TeamPlayersResponse {
         try {
@@ -186,9 +189,9 @@ class WhoScoredScrapingService(private val webDriver: WebDriver) {
                     val cells = row.findElements(By.tagName("td"))
                     println("Row $index: ${cells.size} cells")
 
-                    if (cells.size >= 10) {
+                    if (cells.size >= 10) { // keep a conservative minimum
 
-                        // Get player name
+                        // Get player name (may include number/newline)
                         val name = try {
                             cells[0].findElement(By.cssSelector("a.player-link, a")).text.trim()
                         } catch (_: Exception) {
@@ -236,6 +239,128 @@ class WhoScoredScrapingService(private val webDriver: WebDriver) {
             println("General error: ${e.message}")
             e.printStackTrace()
             throw RuntimeException("Error getting team data: ${e.message}", e)
+        }
+    }
+    /**
+     * Obtiene las estadísticas de resumen (por competición) de un jugador específico.
+     *
+     * @param playerId El ID numérico del jugador (ej: "300713")
+     * @param playerName El nombre del jugador para la URL (ej: "kylian-mbappé")
+     * @return Una lista de CompetitionStats.
+     */
+    fun getPlayerSummaryStats(playerId: String, playerName: String): List<CompetitionStats> {
+
+        val encodedPlayerName = URLEncoder.encode(playerName, StandardCharsets.UTF_8.toString())
+        val url = "https://es.whoscored.com/players/$playerId/show/$encodedPlayerName"
+        val allCompetitionStats = mutableListOf<CompetitionStats>()
+
+        // Esta espera es para el contenido principal (la tabla)
+        val mainContentWait = WebDriverWait(webDriver, Duration.ofSeconds(15))
+
+        try {
+            // 1. Navegar a la URL
+            println("Navegando a: $url")
+            webDriver.get(url)
+
+            // 2. MANEJO DE POP-UPS (Refactorizado)
+            // Llamamos a nuestro método privado para limpiar la pantalla
+            handleConsentPopups()
+
+            // 3. Esperar y seleccionar la tabla de estadísticas
+            val tableBodySelector = By.id("player-table-statistics-body")
+            mainContentWait.until(ExpectedConditions.visibilityOfElementLocated(tableBodySelector))
+            println("Tabla de estadísticas encontrada.")
+
+            // 4. Procesar la tabla (lógica de bucle robusta)
+            val rowCount = webDriver.findElements(By.cssSelector("#player-table-statistics-body tr")).size
+            println("Procesando $rowCount filas de competiciones...")
+
+            for (i in 0 until rowCount) {
+                // Volvemos a buscar la fila en cada iteración para evitar StaleElementReferenceException
+                val row = webDriver.findElement(By.cssSelector("#player-table-statistics-body tr:nth-child(${i + 1})"))
+                val cells = row.findElements(By.tagName("td"))
+
+                if (cells.size == 12) {
+                    val linkElements = cells[0].findElements(By.cssSelector("a.tournament-link"))
+                    if (linkElements.isNotEmpty()) {
+                        val competitionName = linkElements[0].text
+                        val stats = StatsData(
+                            partidos = cells[1].text, minutos = cells[2].text,
+                            goles = cells[3].text, asistencias = cells[4].text,
+                            amarillas = cells[5].text, rojas = cells[6].text,
+                            tpp = cells[7].text, pdec = cells[8].text,
+                            regates = cells[9].text, mvp = cells[10].text,
+                            rating = cells[11].text
+                        )
+                        allCompetitionStats.add(CompetitionStats(campeonato = competitionName, estadisticas = stats))
+                    } else {
+                        println("Fila de 'Total / Promedio' ignorada.")
+                    }
+                }
+            }
+
+        } catch (e: Exception) {
+            println("Error durante el scraping de $url: ${e.message}")
+            e.printStackTrace()
+        } finally {
+            // Nos aseguramos de volver al contenido principal por si algo falló
+            webDriver.switchTo().defaultContent()
+        }
+
+        println("Scraping completado. Se encontraron ${allCompetitionStats.size} competiciones.")
+        return allCompetitionStats
+    }
+
+    // --- MÉTODO PRIVADO REUTILIZABLE ---
+
+    /**
+     * Maneja los pop-ups de consentimiento (Privacidad y Cookies)
+     * que aparecen al cargar la página.
+     */
+    private fun handleConsentPopups() {
+        // 2.1. Intentar cerrar el POP-UP DE PRIVACIDAD ("Aceptar todo")
+        try {
+            // Creamos una espera específica para este pop-up
+            val popupWait = WebDriverWait(webDriver, Duration.ofSeconds(10))
+
+            // Espera a que el contenedor del pop-up sea visible
+            popupWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("qc-cmp2-ui")))
+
+            // Busca el botón "Aceptar todo"
+            val acceptAllButton = popupWait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//button[.//span[text()='Aceptar todo']]")
+            ))
+
+            acceptAllButton.click()
+            println("Pop-up de Privacidad 'Aceptar todo' clickeado.")
+
+            // Damos un respiro para la animación
+            Thread.sleep(500)
+
+        } catch (e: Exception) {
+            println("Info: No se encontró el pop-up 'Aceptar todo'. ${e.message}")
+        }
+
+        // 2.2. Intentar cerrar el BANNER DE COOKIES (el del iframe)
+        try {
+            // Creamos una espera corta para el banner secundario
+            val iframeWait = WebDriverWait(webDriver, Duration.ofSeconds(3))
+
+            iframeWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("iframe[title='SP Consent Message']")))
+            webDriver.switchTo().frame(webDriver.findElement(By.cssSelector("iframe[title='SP Consent Message']")))
+
+            val acceptButton = iframeWait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//button[.//span[text()='ACEPTO']]")
+            ))
+            acceptButton.click()
+            println("Banner de cookies (iframe) 'ACEPTO' aceptado.")
+
+        } catch (e: Exception) {
+            println("Info: No se encontró el banner de cookies en el iframe.")
+        } finally {
+            // ¡CRÍTICO! Siempre debemos salir del iframe,
+            // hayamos tenido éxito o no.
+            webDriver.switchTo().defaultContent()
         }
     }
 }

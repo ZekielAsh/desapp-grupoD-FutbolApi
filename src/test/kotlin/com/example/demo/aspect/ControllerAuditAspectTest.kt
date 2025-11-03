@@ -77,7 +77,9 @@ class ControllerAuditAspectTest {
         whenever(signature.declaringType).thenReturn(ControllerAuditAspectTest::class.java)
         whenever(signature.name).thenReturn("createPlayer")
         whenever(joinPoint.args).thenReturn(arrayOf())
-        whenever(joinPoint.proceed()).thenThrow(RuntimeException("Test error"))
+
+        // Configure the mock to throw an exception when proceed() is called
+        doThrow(RuntimeException("Test error")).`when`(joinPoint).proceed()
 
         assertThrows(RuntimeException::class.java) {
             controllerAuditAspect.auditControllerMethods(joinPoint)
@@ -160,5 +162,96 @@ class ControllerAuditAspectTest {
         assertEquals("DELETE", capturedLog.httpMethod)
         assertTrue(capturedLog.wasSuccess)
     }
-}
 
+    @Test
+    fun `test audit aspect redacts sensitive data for auth login endpoint`() {
+        request.method = "POST"
+        request.requestURI = "/auth/login"
+
+        val logCaptor = argumentCaptor<ApiAuditLog>()
+
+        whenever(joinPoint.signature).thenReturn(signature)
+        whenever(signature.declaringType).thenReturn(ControllerAuditAspectTest::class.java)
+        whenever(signature.name).thenReturn("login")
+        // Don't stub joinPoint.args because it's not called for sensitive paths
+        whenever(joinPoint.proceed()).thenReturn("token")
+
+        controllerAuditAspect.auditControllerMethods(joinPoint)
+
+        verify(apiAuditService).logApiCall(logCaptor.capture())
+
+        val capturedLog = logCaptor.firstValue
+        assertEquals("[REDACTED - Sensitive Data]", capturedLog.params)
+        assertTrue(capturedLog.wasSuccess)
+    }
+
+    @Test
+    fun `test audit aspect redacts sensitive data for auth register endpoint`() {
+        request.method = "POST"
+        request.requestURI = "/auth/register"
+
+        val logCaptor = argumentCaptor<ApiAuditLog>()
+
+        whenever(joinPoint.signature).thenReturn(signature)
+        whenever(signature.declaringType).thenReturn(ControllerAuditAspectTest::class.java)
+        whenever(signature.name).thenReturn("register")
+        // Don't stub joinPoint.args because it's not called for sensitive paths
+        whenever(joinPoint.proceed()).thenReturn("token")
+
+        controllerAuditAspect.auditControllerMethods(joinPoint)
+
+        verify(apiAuditService).logApiCall(logCaptor.capture())
+
+        val capturedLog = logCaptor.firstValue
+        assertEquals("[REDACTED - Sensitive Data]", capturedLog.params)
+    }
+
+    @Test
+    fun `test audit aspect sanitizes error messages for auth endpoints`() {
+        request.method = "POST"
+        request.requestURI = "/auth/login"
+
+        val logCaptor = argumentCaptor<ApiAuditLog>()
+
+        whenever(joinPoint.signature).thenReturn(signature)
+        whenever(signature.declaringType).thenReturn(ControllerAuditAspectTest::class.java)
+        whenever(signature.name).thenReturn("login")
+        // Don't stub joinPoint.args because it's not called for sensitive paths
+
+        // Configure the mock to throw an exception when proceed() is called
+        doThrow(RuntimeException("Invalid credentials for user: admin")).`when`(joinPoint).proceed()
+
+        assertThrows(RuntimeException::class.java) {
+            controllerAuditAspect.auditControllerMethods(joinPoint)
+        }
+
+        verify(apiAuditService).logApiCall(logCaptor.capture())
+
+        val capturedLog = logCaptor.firstValue
+        assertEquals("Authentication failed", capturedLog.errorMessage)
+        assertEquals("[REDACTED - Sensitive Data]", capturedLog.params)
+        assertFalse(capturedLog.wasSuccess)
+    }
+
+    @Test
+    fun `test audit aspect does not redact non-auth endpoints`() {
+        request.method = "GET"
+        request.requestURI = "/api/teams/123/players"
+
+        val logCaptor = argumentCaptor<ApiAuditLog>()
+
+        whenever(joinPoint.signature).thenReturn(signature)
+        whenever(signature.declaringType).thenReturn(ControllerAuditAspectTest::class.java)
+        whenever(signature.name).thenReturn("getPlayers")
+        whenever(joinPoint.args).thenReturn(arrayOf(123L))
+        whenever(joinPoint.proceed()).thenReturn("players")
+
+        controllerAuditAspect.auditControllerMethods(joinPoint)
+
+        verify(apiAuditService).logApiCall(logCaptor.capture())
+
+        val capturedLog = logCaptor.firstValue
+        assertTrue(capturedLog.params.contains("123"))
+        assertNotEquals("[REDACTED - Sensitive Data]", capturedLog.params)
+    }
+}

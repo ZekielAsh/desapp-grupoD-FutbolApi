@@ -56,7 +56,13 @@ class ApiAuditControllerTest {
         assertEquals(log2.id, result[1].id)
         assertEquals(log1.id, result[2].id)
         verify(apiAuditLogRepository).findAll(argThat<Sort> {
-            this.getOrderFor("timestamp")?.direction == Sort.Direction.DESC
+            val timestampOrder = this.getOrderFor("timestamp")
+            val idOrder = this.getOrderFor("id")
+
+            timestampOrder != null &&
+            timestampOrder.direction == Sort.Direction.DESC &&
+            idOrder != null &&
+            idOrder.direction == Sort.Direction.DESC
         })
     }
 

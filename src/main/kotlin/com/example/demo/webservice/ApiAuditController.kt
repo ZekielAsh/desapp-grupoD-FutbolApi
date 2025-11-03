@@ -8,26 +8,26 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 /**
- * Este controlador expone endpoints para ver los logs de auditoría guardados.
+ * Controller to expose endpoints for viewing saved audit logs.
  */
 @RestController
-@RequestMapping("/api/audit") // Ruta base para todos los endpoints de este controlador
+@RequestMapping("/api/audit")
 class ApiAuditController(
-    // Inyectamos el REPOSITORIO, no el servicio,
-    // porque queremos LEER, no escribir logs.
     private val apiAuditLogRepository: ApiAuditLogRepository
 ) {
 
     /**
-     * Endpoint para obtener TODAS las consultas registradas.
+     * Endpoint to get all audit logs.
      *
-     * @return Una lista de todos los logs, ordenados por fecha más reciente primero.
+     * @return List of all logs ordered by most recent first (timestamp DESC, then id DESC)
      */
     @GetMapping("/logs")
     fun getAllAuditLogs(): List<ApiAuditLog> {
-        // 1. Usamos el repositorio para buscar todos los logs.
-        // 2. Usamos 'Sort' para ordenarlos por la columna 'timestamp'
-        //    en orden descendente (DESC), así ves los más nuevos primero.
-        return apiAuditLogRepository.findAll(Sort.by(Sort.Direction.DESC, "timestamp"))
+        // Order by timestamp DESC (most recent first), then by id DESC as tiebreaker
+        val sort = Sort.by(
+            Sort.Order.desc("timestamp"),
+            Sort.Order.desc("id")
+        )
+        return apiAuditLogRepository.findAll(sort)
     }
 }

@@ -17,4 +17,14 @@ class TeamController(
         val players = teamService.getPlayers(id)
         return ResponseEntity.ok(players)
     }
+
+    @GetMapping("/{id}/next-matches")
+    fun getNextMatches(@PathVariable id: Long): ResponseEntity<Any> {
+        return try {
+            val matches = teamService.getNextMatchesByTeamName(id)
+            ResponseEntity.ok(matches)
+        } catch (e: Exception) {
+            ResponseEntity.badRequest().body("Error retrieving next matches: ${e.message}")
+        }
+    }
 }

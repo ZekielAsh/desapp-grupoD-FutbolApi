@@ -32,6 +32,7 @@ val swaggerVersion = "2.8.5"
 val h2Version = "2.3.232"
 val seleniumVersion = "4.15.0"
 val webDriverManagerVersion = "5.6.2"
+val mockitoKotlinVersion = "5.1.0"
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter")
@@ -45,6 +46,7 @@ dependencies {
     implementation("org.seleniumhq.selenium:selenium-java:$seleniumVersion")
     implementation("io.github.bonigarcia:webdrivermanager:$webDriverManagerVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
 
     runtimeOnly("io.jsonwebtoken:jjwt-impl:$jsonWebTokenVersion")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jsonWebTokenVersion")
@@ -54,6 +56,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("com.h2database:h2:$h2Version")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion")
 }
 
 kotlin {
@@ -84,7 +87,13 @@ tasks.test {
     useJUnitPlatform()
     // evita el error de zona horaria en cualquier SO
     systemProperty("user.timezone", "UTC")
+    // Enable dynamic agent loading for Mockito (suppress warnings in Java 21+)
+    jvmArgs("-XX:+EnableDynamicAgentLoading")
     finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.processTestResources {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 tasks.jacocoTestReport {

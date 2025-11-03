@@ -12,27 +12,30 @@ import org.springframework.web.context.request.ServletRequestAttributes
 @Aspect
 @Component
 class ControllerAuditAspect(
-    private val apiAuditService: ApiAuditService // Inyectamos el mismo servicio de guardado
+    private val apiAuditService: ApiAuditService
 ) {
 
+    companion object {
+        private const val MAX_ERROR_MESSAGE_LENGTH = 1900
+        private const val MAX_PARAMS_LENGTH = 900
+    }
+
     /**
-     * Esta es la nueva "regla" de intercepción.
-     * Le decimos a Spring: "Ejecuta este código ALREDEDOR (Around)
-     * de cualquier método público en cualquier clase anotada con
-     * @RestController O @Controller".
+     * Intercepts all public methods in classes annotated with @RestController or @Controller.
      */
     @Around("within(@org.springframework.web.bind.annotation.RestController *) || within(@org.springframework.stereotype.Controller *)")
     fun auditControllerMethods(joinPoint: ProceedingJoinPoint): Any? {
 
-        // 1. Obtenemos el request actual para sacar info HTTP
+        // 1. Get HTTP request information
         val request = (RequestContextHolder.currentRequestAttributes() as ServletRequestAttributes).request
         val httpMethod = request.method
         val path = request.requestURI
 
-        // 2. Obtenemos la info del método del controlador
+        // 2. Get controller method information
         val controllerName = joinPoint.signature.declaringType.simpleName
         val methodName = joinPoint.signature.name
         val params = joinPoint.args.joinToString(separator = ", ", prefix = "[", postfix = "]")
+            .take(MAX_PARAMS_LENGTH)
 
         println("Interceptando API call: $httpMethod $path ($controllerName.$methodName)")
 
@@ -42,21 +45,21 @@ class ControllerAuditAspect(
         var result: Any?
 
         try {
-            // 3. Ejecutamos el método original del controlador
+            // 3. Execute the original controller method
             result = joinPoint.proceed()
 
         } catch (e: Throwable) {
-            // 4. Si el controlador lanzó un error, lo capturamos
+            // 4. Capture error if controller throws exception
             wasSuccess = false
-            errorMessage = e.message
+            errorMessage = (e.message ?: e.javaClass.simpleName).take(MAX_ERROR_MESSAGE_LENGTH)
             println("Error en $httpMethod $path: $errorMessage")
-            throw e // Volvemos a lanzar el error para que Spring lo maneje
+            throw e // Re-throw for Spring to handle
 
         } finally {
-            // 5. Este bloque se ejecuta SIEMPRE (haya éxito o error)
+            // 5. This block always executes (success or error)
             val duration = System.currentTimeMillis() - startTime
 
-            // 6. Creamos el objeto de log con la nueva info
+            // 6. Create audit log object
             val log = ApiAuditLog(
                 httpMethod = httpMethod,
                 path = path,
@@ -68,11 +71,11 @@ class ControllerAuditAspect(
                 errorMessage = errorMessage
             )
 
-            // 7. Guardamos el log
+            // 7. Save the log
             apiAuditService.logApiCall(log)
             println("API call a $path registrada. Duración: ${duration}ms")
         }
 
-        return result // Devolvemos el resultado original (ej. el JSON)
+        return result
     }
 }

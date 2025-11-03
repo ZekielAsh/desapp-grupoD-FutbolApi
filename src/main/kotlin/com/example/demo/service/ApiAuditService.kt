@@ -11,17 +11,17 @@ class ApiAuditService(
     private val auditLogRepository: ApiAuditLogRepository
 ) {
     /**
-     * Guarda el log en una transacción separada.
-     * Usamos REQUIRES_NEW para asegurar que el log se guarde
-     * incluso si la transacción principal del scraping falla.
+     * Saves the audit log.
+     * Uses NOT_SUPPORTED to avoid transaction conflicts during tests.
+     * The log is saved outside of any existing transaction.
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun logApiCall(log: ApiAuditLog) {
         try {
             auditLogRepository.save(log)
         } catch (e: Exception) {
-            // Manejar error de guardado de log (ej. imprimir en consola)
-            println("Error al guardar el log de auditoría: ${e.message}")
+            // Handle log save error (print to console)
+            println("Error saving audit log: ${e.message}")
         }
     }
 }

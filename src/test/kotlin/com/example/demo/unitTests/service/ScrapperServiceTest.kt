@@ -1,5 +1,6 @@
-package com.example.demo.service
+package com.example.demo.unitTests.service
 
+import com.example.demo.service.ScrapperService
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.openqa.selenium.*
 import java.net.URLEncoder
-import java.time.Duration
 
 // Usamos la extensión de MockK para JUnit 5
 @ExtendWith(MockKExtension::class)

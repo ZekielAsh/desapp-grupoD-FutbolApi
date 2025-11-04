@@ -1,4 +1,4 @@
-package com.example.demo.webservice
+package com.example.demo.controller
 
 import com.example.demo.service.PlayerService
 import org.springframework.http.ResponseEntity

@@ -44,18 +44,32 @@ data class MatchDto(
     val competitionName: String?,
     val homeTeam: String?,
     val awayTeam: String?,
-    val utcDate: String?
+    val utcDate: String?,
+    val score: ScoreDto? // Ahora se incluye el resultado del partido
 ) {
     @JsonCreator
     constructor(
         @JsonProperty("competition") competition: CompetitionDto?,
-        @JsonProperty("homeTeam") homeTeam: TeamInfoDto?,
-        @JsonProperty("awayTeam") awayTeam: TeamInfoDto?,
-        @JsonProperty("utcDate") utcDate: String?
+        @JsonProperty("homeTeam") homeTeamDto: TeamInfoDto?,
+        @JsonProperty("awayTeam") awayTeamDto: TeamInfoDto?,
+        @JsonProperty("utcDate") utcDate: String?,
+        @JsonProperty("score") scoreDto: ScoreDto?
     ) : this(
         competitionName = competition?.name,
-        homeTeam = homeTeam?.name,
-        awayTeam = awayTeam?.name,
-        utcDate = utcDate
+        homeTeam = homeTeamDto?.name,
+        awayTeam = awayTeamDto?.name,
+        utcDate = utcDate,
+        score = scoreDto
     )
 }
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ScoreDto(
+    val fullTime: FullTimeScoreDto?
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class FullTimeScoreDto(
+    val home: Int?,
+    val away: Int?
+    )

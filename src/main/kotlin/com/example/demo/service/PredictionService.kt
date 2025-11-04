@@ -1,0 +1,130 @@
+package com.example.demo.service
+
+import com.example.demo.model.prediction.MatchPredictionResponse
+import com.example.demo.model.prediction.StatComparison
+import com.example.demo.model.prediction.TeamAggregateStats
+import com.example.demo.model.TeamPlayersResponse
+import com.example.demo.model.prediction.RecentForm
+import com.example.demo.model.prediction.TrendAnalysis
+import com.example.demo.model.prediction.WinProbabilities
+import org.springframework.stereotype.Service
+
+@Service
+class PredictionService(
+    private val scrapperService: ScrapperService,
+    private val teamService: TeamService
+) {
+
+    fun predictMatch(homeTeam: String, awayTeam: String, homeTeamId: Long, awayTeamId: Long): MatchPredictionResponse {
+
+        val homeData = scrapperService.getTeamPlayersByName(homeTeam)
+        val awayData = scrapperService.getTeamPlayersByName(awayTeam)
+
+        val homeStats = aggregateStats(homeData)
+        val awayStats = aggregateStats(awayData)
+
+        val homeForm = computeRecentForm(homeTeamId)
+        val awayForm = computeRecentForm(awayTeamId)
+
+        val trend = TrendAnalysis(
+            avgRating = (homeStats.avgRating + awayStats.avgRating) / 2,
+            avgGoals = (homeStats.totalGoals + awayStats.totalGoals) / 2.0,
+            avgAssists = (homeStats.totalAssists + awayStats.totalAssists) / 2.0,
+            recentFormScore = (homeForm.formScore + awayForm.formScore) / 2.0
+        )
+
+        val comparison = StatComparison(homeStats, awayStats)
+
+        val probabilities = computeProbabilities(homeStats, awayStats, homeForm, awayForm)
+
+        return MatchPredictionResponse(
+            homeTeam = homeTeam,
+            awayTeam = awayTeam,
+            trendAnalysis = trend,
+            statComparison = comparison,
+            probabilities = probabilities,
+            homeRecentForm = homeForm,
+            awayRecentForm = awayForm
+        )
+    }
+
+    private fun aggregateStats(team: TeamPlayersResponse): TeamAggregateStats {
+        val players = team.players
+
+        val avgRating = players.map { it.rating }.average()
+        val totalGoals = players.sumOf { it.goals }
+        val totalAssists = players.sumOf { it.assists }
+
+        return TeamAggregateStats(avgRating, totalGoals, totalAssists)
+    }
+
+    private fun computeRecentForm(teamId: Long): RecentForm {
+
+        val matches = teamService.getLastFinishedMatches(teamId)
+
+        if (matches.isEmpty()) {
+            return RecentForm(emptyList(), 0, 0, 0, 0.0)
+        }
+
+        var gf = 0
+        var ga = 0
+        val results = mutableListOf<String>()
+        var points = 0
+
+        for (m in matches) {
+
+            val homeGoals = m.score?.fullTime?.home ?: 0
+            val awayGoals = m.score?.fullTime?.away ?: 0
+
+            val isHome = m.homeTeam.equals(teamId.toString(), ignoreCase = true)
+
+            val goalsFor = if (isHome) homeGoals else awayGoals
+            val goalsAgainst = if (isHome) awayGoals else homeGoals
+
+            gf += goalsFor
+            ga += goalsAgainst
+
+            val result = when {
+                goalsFor > goalsAgainst -> "W"
+                goalsFor < goalsAgainst -> "L"
+                else -> "D"
+            }
+
+            results.add(result)
+
+            points += when (result) {
+                "W" -> 3
+                "D" -> 1
+                else -> 0
+            }
+        }
+
+        val formScore = points * 0.7 + (gf - ga) * 0.3
+
+        return RecentForm(results, gf, ga, points, formScore)
+    }
+
+    private fun computeProbabilities(
+        home: TeamAggregateStats,
+        away: TeamAggregateStats,
+        homeForm: RecentForm,
+        awayForm: RecentForm
+    ): WinProbabilities {
+
+        val ratingDiff = home.avgRating - away.avgRating
+        val goalsDiff = home.totalGoals - away.totalGoals
+        val formDiff = homeForm.formScore - awayForm.formScore
+
+        var homeP = 0.33 + ratingDiff * 0.03 + goalsDiff * 0.02 + formDiff * 0.04
+        var awayP = 0.33 - ratingDiff * 0.03 - goalsDiff * 0.02 - formDiff * 0.04
+        var drawP = 0.34
+
+        val sum = homeP + drawP + awayP
+
+        return WinProbabilities(
+            homeWin = homeP / sum,
+            draw = drawP / sum,
+            awayWin = awayP / sum
+        )
+    }
+}

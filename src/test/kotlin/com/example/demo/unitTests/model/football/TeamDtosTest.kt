@@ -1,5 +1,13 @@
-package com.example.demo.model.football
+package com.example.demo.unitTests.model.football
 
+import com.example.demo.model.football.CompetitionDto
+import com.example.demo.model.football.FullTimeScoreDto
+import com.example.demo.model.football.MatchDto
+import com.example.demo.model.football.MatchesResponse
+import com.example.demo.model.football.PlayerDto
+import com.example.demo.model.football.ScoreDto
+import com.example.demo.model.football.TeamInfoDto
+import com.example.demo.model.football.TeamResponse
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

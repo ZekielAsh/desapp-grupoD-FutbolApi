@@ -1,5 +1,6 @@
-package com.example.demo.model
+package com.example.demo.unitTests.model
 
+import com.example.demo.model.User
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -9,7 +10,8 @@ class UserTest {
     fun testUserCreation() {
         val user = User(
             username = "testuser",
-            password = "password123")
+            password = "password123"
+        )
         assertEquals("testuser", user.username)
         assertEquals("password123", user.password)
     }

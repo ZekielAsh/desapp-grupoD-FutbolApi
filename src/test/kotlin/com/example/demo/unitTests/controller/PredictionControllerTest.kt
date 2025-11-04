@@ -1,5 +1,6 @@
-package com.example.demo.controller
+package com.example.demo.unitTests.controller
 
+import com.example.demo.controller.PredictionController
 import com.example.demo.model.prediction.*
 import com.example.demo.service.PredictionService
 import org.junit.jupiter.api.Test

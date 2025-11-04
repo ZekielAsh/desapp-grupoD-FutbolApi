@@ -2,6 +2,12 @@ package com.example.demo.security
 
 import com.example.demo.model.User
 import com.example.demo.repositories.UserRepository
+import com.example.demo.security.AuthController
+import com.example.demo.security.AuthRequest
+import com.example.demo.security.AuthResponse
+import com.example.demo.security.JwtService
+import com.example.demo.security.MyUserDetailsService
+import com.example.demo.security.RegisterRequest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
@@ -15,6 +21,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.junit.jupiter.api.Assertions.*
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 
 @ExtendWith(MockitoExtension::class)
 class AuthControllerTest {
@@ -75,7 +82,7 @@ class AuthControllerTest {
         val authRequest = AuthRequest("nonexistent", "password")
 
         whenever(authenticationManager.authenticate(any()))
-            .thenThrow(org.springframework.security.core.userdetails.UsernameNotFoundException("User not found"))
+            .thenThrow(UsernameNotFoundException("User not found"))
 
         val response = authController.authenticate(authRequest)
 

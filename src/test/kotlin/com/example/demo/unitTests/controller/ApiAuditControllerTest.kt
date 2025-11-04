@@ -1,5 +1,6 @@
-package com.example.demo.controller
+package com.example.demo.unitTests.controller
 
+import com.example.demo.controller.ApiAuditController
 import com.example.demo.model.ApiAuditLog
 import com.example.demo.repository.ApiAuditLogRepository
 import org.junit.jupiter.api.Test

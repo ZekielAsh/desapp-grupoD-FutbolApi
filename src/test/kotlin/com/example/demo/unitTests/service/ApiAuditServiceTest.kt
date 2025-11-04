@@ -1,7 +1,8 @@
-package com.example.demo.service
+package com.example.demo.unitTests.service
 
 import com.example.demo.model.ApiAuditLog
 import com.example.demo.repository.ApiAuditLogRepository
+import com.example.demo.service.ApiAuditService
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks

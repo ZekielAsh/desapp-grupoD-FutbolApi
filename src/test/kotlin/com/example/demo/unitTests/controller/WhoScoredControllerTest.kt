@@ -1,5 +1,6 @@
-package com.example.demo.controller
+package com.example.demo.unitTests.controller
 
+import com.example.demo.controller.WhoScoredController
 import com.example.demo.model.PlayerStats
 import com.example.demo.model.TeamPlayersResponse
 import com.example.demo.service.TeamService

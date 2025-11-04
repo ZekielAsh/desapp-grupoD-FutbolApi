@@ -1,5 +1,6 @@
-package com.example.demo.aspect
+package com.example.demo.unitTests.aspect
 
+import com.example.demo.aspect.ControllerAuditAspect
 import com.example.demo.model.ApiAuditLog
 import com.example.demo.service.ApiAuditService
 import org.aspectj.lang.ProceedingJoinPoint

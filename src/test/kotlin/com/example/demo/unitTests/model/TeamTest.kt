@@ -1,5 +1,7 @@
-package com.example.demo.model
+package com.example.demo.unitTests.model
 
+import com.example.demo.model.Player
+import com.example.demo.model.Team
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 

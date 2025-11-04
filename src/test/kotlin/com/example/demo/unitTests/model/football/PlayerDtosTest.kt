@@ -1,5 +1,8 @@
-package com.example.demo.model.football
+package com.example.demo.unitTests.model.football
 
+import com.example.demo.model.football.CompetitionStats
+import com.example.demo.model.football.PlayerStatsResponse
+import com.example.demo.model.football.StatsData
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 

@@ -1,6 +1,7 @@
-package com.example.demo.repositories
+package com.example.demo.unitTests.repositories
 
 import com.example.demo.model.User
+import com.example.demo.repositories.UserRepository
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 import org.springframework.beans.factory.annotation.Autowired

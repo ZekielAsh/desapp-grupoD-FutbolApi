@@ -2,6 +2,7 @@ package com.example.demo.security
 
 import com.example.demo.model.User
 import com.example.demo.repositories.UserRepository
+import com.example.demo.security.MyUserDetailsService
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks

@@ -1,5 +1,6 @@
-package com.example.demo.helpers
+package com.example.demo.unitTests.helpers
 
+import com.example.demo.helpers.FootballDataProperties
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 

@@ -1,4 +1,4 @@
-package com.example.demo.service
+package com.example.demo.unitTests.service
 
 import com.example.demo.model.TeamPlayersResponse
 import com.example.demo.model.PlayerStats
@@ -7,6 +7,9 @@ import com.example.demo.model.prediction.TeamAggregateStats
 import com.example.demo.model.football.FullTimeScoreDto
 import com.example.demo.model.football.ScoreDto
 import com.example.demo.model.football.MatchDto
+import com.example.demo.service.PredictionService
+import com.example.demo.service.ScrapperService
+import com.example.demo.service.TeamService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock

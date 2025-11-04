@@ -1,8 +1,10 @@
-package com.example.demo.service
+package com.example.demo.unitTests.service
 
 import com.example.demo.model.football.CompetitionStats
 import com.example.demo.model.football.PlayerStatsResponse
 import com.example.demo.model.football.StatsData
+import com.example.demo.service.PlayerService
+import com.example.demo.service.ScrapperService
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks

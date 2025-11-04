@@ -1,5 +1,6 @@
-package com.example.demo.controller
+package com.example.demo.unitTests.controller
 
+import com.example.demo.controller.PlayerController
 import com.example.demo.model.football.CompetitionStats
 import com.example.demo.model.football.PlayerStatsResponse
 import com.example.demo.model.football.StatsData

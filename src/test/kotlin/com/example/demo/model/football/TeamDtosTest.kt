@@ -76,8 +76,8 @@ class TeamDtosTest {
     @Test
     fun `test MatchesResponse with matches`() {
         val matches = listOf(
-            MatchDto("La Liga", "Barcelona", "Real Madrid", "2025-11-15T20:00:00Z"),
-            MatchDto("Champions League", "Bayern", "PSG", "2025-11-20T21:00:00Z")
+            MatchDto("La Liga", "Barcelona", "Real Madrid", "2025-11-15T20:00:00Z", null),
+            MatchDto("Champions League", "Bayern", "PSG", "2025-11-20T21:00:00Z", null)
         )
 
         val response = MatchesResponse(matches = matches)
@@ -113,18 +113,26 @@ class TeamDtosTest {
         val competition = CompetitionDto("Serie A")
         val homeTeam = TeamInfoDto("Juventus", "Juve", "JUV", null)
         val awayTeam = TeamInfoDto("Inter", "Inter", "INT", null)
+        val score = ScoreDto(
+            fullTime = FullTimeScoreDto(home = 2, away = 1)
+        )
 
         val match = MatchDto(
             competition = competition,
-            homeTeam = homeTeam,
-            awayTeam = awayTeam,
-            utcDate = "2025-11-10T18:00:00Z"
+            homeTeamDto = homeTeam,
+            awayTeamDto = awayTeam,
+            utcDate = "2025-11-10T18:00:00Z",
+            scoreDto = score
         )
 
         assertEquals("Serie A", match.competitionName)
         assertEquals("Juventus", match.homeTeam)
         assertEquals("Inter", match.awayTeam)
         assertEquals("2025-11-10T18:00:00Z", match.utcDate)
+        assertNotNull(match.score)
+        assertEquals(2, match.score?.fullTime?.home)
+        assertEquals(1, match.score?.fullTime?.away)
+
     }
 
     @Test
@@ -133,7 +141,8 @@ class TeamDtosTest {
             competitionName = null,
             homeTeam = null,
             awayTeam = null,
-            utcDate = null
+            utcDate = null,
+            score = null
         )
 
         assertNull(match.competitionName)

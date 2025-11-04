@@ -57,6 +57,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("com.h2database:h2:$h2Version")
     testImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion")
+    testImplementation("io.mockk:mockk:1.13.5")
 }
 
 kotlin {

@@ -7,6 +7,7 @@ import com.example.demo.model.TeamPlayersResponse
 import com.example.demo.model.prediction.RecentForm
 import com.example.demo.model.prediction.TrendAnalysis
 import com.example.demo.model.prediction.WinProbabilities
+import com.google.common.annotations.VisibleForTesting
 import org.springframework.stereotype.Service
 
 @Service
@@ -58,13 +59,10 @@ class PredictionService(
         return TeamAggregateStats(avgRating, totalGoals, totalAssists)
     }
 
-    private fun computeRecentForm(teamId: Long): RecentForm {
-
+    private fun computeRecentForm(teamId: Long, teamName: String? = null): RecentForm {
         val matches = teamService.getLastFinishedMatches(teamId)
 
-        if (matches.isEmpty()) {
-            return RecentForm(emptyList(), 0, 0, 0, 0.0)
-        }
+        if (matches.isEmpty()) return RecentForm(emptyList(), 0, 0, 0, 0.0)
 
         var gf = 0
         var ga = 0
@@ -73,10 +71,10 @@ class PredictionService(
 
         for (m in matches) {
 
+            val isHome = m.homeTeam.equals(teamName, ignoreCase = true)
+
             val homeGoals = m.score?.fullTime?.home ?: 0
             val awayGoals = m.score?.fullTime?.away ?: 0
-
-            val isHome = m.homeTeam.equals(teamId.toString(), ignoreCase = true)
 
             val goalsFor = if (isHome) homeGoals else awayGoals
             val goalsAgainst = if (isHome) awayGoals else homeGoals
@@ -126,5 +124,18 @@ class PredictionService(
             draw = drawP / sum,
             awayWin = awayP / sum
         )
+    }
+
+    @VisibleForTesting
+    internal fun computeProbabilitiesForTest(
+        home: TeamAggregateStats,
+        away: TeamAggregateStats,
+        homeForm: RecentForm,
+        awayForm: RecentForm
+    ) = computeProbabilities(home, away, homeForm, awayForm)
+
+    @VisibleForTesting
+    internal fun computeRecentFormForTest(teamId: Long, teamName: String): RecentForm {
+        return computeRecentForm(teamId, teamName)
     }
 }

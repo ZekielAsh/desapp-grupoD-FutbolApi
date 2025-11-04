@@ -1,7 +1,9 @@
 package com.example.demo.controller
 
+import com.example.demo.model.football.FullTimeScoreDto
 import com.example.demo.model.football.MatchDto
 import com.example.demo.model.football.PlayerDto
+import com.example.demo.model.football.ScoreDto
 import com.example.demo.service.TeamService
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -58,8 +60,8 @@ class TeamControllerTest {
     fun `test getNextMatches returns matches successfully`() {
         val teamId = 65L
         val matches = listOf(
-            MatchDto("La Liga", "Barcelona", "Real Madrid", "2025-11-15T20:00:00Z"),
-            MatchDto("Champions League", "Barcelona", "Bayern", "2025-11-20T21:00:00Z")
+            MatchDto("La Liga", "Barcelona", "Real Madrid", "2025-11-15T20:00:00Z", null),
+            MatchDto("Champions League", "Barcelona", "Bayern", "2025-11-20T21:00:00Z", null)
         )
 
         whenever(teamService.getNextMatchesByTeamName(teamId)).thenReturn(matches)
@@ -112,5 +114,72 @@ class TeamControllerTest {
         assertEquals("Player A", response1.body!![0].name)
         assertEquals("Player B", response2.body!![0].name)
     }
+
+    @Test
+    fun `getPlayers returns bad request on exception`() {
+        val teamId = 100L
+
+        whenever(teamService.getPlayers(teamId))
+            .thenThrow(RuntimeException("Unexpected error"))
+
+        val response = teamController.getPlayers(teamId)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertTrue(response.body!!.isEmpty())
+    }
+
+    @Test
+    fun `test getNextMatches returns matches including score`() {
+        val teamId = 65L
+        val match = MatchDto(
+            competitionName = "Liga",
+            homeTeam = "Barcelona",
+            awayTeam = "Sevilla",
+            utcDate = "2025-11-10T18:00:00Z",
+            score = ScoreDto(fullTime = FullTimeScoreDto(2, 1))
+        )
+
+        whenever(teamService.getNextMatchesByTeamName(teamId)).thenReturn(listOf(match))
+
+        val response = teamController.getNextMatches(teamId)
+        val matchList = response.body as List<*>
+        val result = matchList[0]
+
+        assertEquals("Barcelona", (result as MatchDto).homeTeam)
+        assertEquals(2, result.score?.fullTime?.home)
+    }
+
+    @Test
+    fun `getNextMatches returns bad request when teamId is invalid`() {
+        val response = teamController.getNextMatches(-5)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertTrue(response.body.toString().contains("Invalid team ID"))
+    }
+
+    @Test
+    fun `test calling getPlayers and getNextMatches in sequence`() {
+        val teamId = 10L
+        val players = listOf(PlayerDto(1, "X", "Forward", "AR", "2000-01-01", 9))
+        val matches = listOf(
+            MatchDto("Liga", "Team", "Rival", "2025-01-01", null)
+        )
+
+        whenever(teamService.getPlayers(teamId)).thenReturn(players)
+        whenever(teamService.getNextMatchesByTeamName(teamId)).thenReturn(matches)
+
+        val resp1 = teamController.getPlayers(teamId)
+        val resp2 = teamController.getNextMatches(teamId)
+
+        val matchList = resp2.body as List<MatchDto>
+
+        assertEquals(1, resp1.body!!.size)
+        assertEquals(1, matchList.size)
+
+        verify(teamService).getPlayers(teamId)
+        verify(teamService).getNextMatchesByTeamName(teamId)
+    }
+
+
 }
 

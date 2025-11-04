@@ -13,11 +13,18 @@ class PredictionController(
     @GetMapping("/match")
     fun predictMatch(
         @RequestParam homeTeam: String,
-        @RequestParam awayTeam: String
+        @RequestParam awayTeam: String,
+        @RequestParam homeTeamId: Long,
+        @RequestParam awayTeamId: Long
     ): ResponseEntity<Any> =
         try {
             ResponseEntity.ok(
-                predictionService.predictMatch(homeTeam, awayTeam)
+                predictionService.predictMatch(
+                    homeTeam,
+                    awayTeam,
+                    homeTeamId,
+                    awayTeamId
+                )
             )
         } catch (e: Exception) {
             ResponseEntity.badRequest().body("Error generating prediction: ${e.message}")

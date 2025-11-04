@@ -52,4 +52,24 @@ class TeamService(private val footballRestClient: RestClient, private val scrapp
         }
     }
 
+    fun getLastFinishedMatches(teamId: Long, limit: Int = 5): List<MatchDto> {
+        return try {
+            val response = footballRestClient.get()
+                .uri("/teams/{id}/matches?status=FINISHED", teamId)
+                .retrieve()
+                .body(MatchesResponse::class.java)
+
+            response?.matches
+                ?.sortedByDescending { it.utcDate }
+                ?.take(limit)
+                ?: emptyList()
+
+        } catch (ex: RestClientResponseException) {
+            if (ex.statusCode == HttpStatus.NOT_FOUND) {
+                emptyList()
+            } else {
+                throw ex
+            }
+        }
+    }
 }

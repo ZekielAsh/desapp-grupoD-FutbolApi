@@ -3,29 +3,37 @@ package com.example.demo.model.football
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
 /**
- * Almacena las estadísticas de un jugador en una competición específica.
- * Esto es lo que devolverá la lista final.
+ * Complete response containing player statistics by competition and totals.
  */
-data class CompetitionStats(
-    val campeonato: String,
-    val estadisticas: StatsData
+data class PlayerStatsResponse(
+    val competitions: List<CompetitionStats>,
+    val totalAverage: StatsData?
 )
 
 /**
- * Representa la fila de estadísticas de la tabla de resumen de WhoScored.
- * Los campos coinciden con las columnas de la tabla.
+ * Stores player statistics in a specific competition.
+ * This is what the final list will return.
  */
-@JsonIgnoreProperties(ignoreUnknown = true) // Ignora campos JSON que no mapeamos
+data class CompetitionStats(
+    val competition: String,
+    val statistics: StatsData
+)
+
+/**
+ * Represents the statistics row from the WhoScored summary table.
+ * The fields match the table columns.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true) // Ignore unmapped JSON fields
 data class StatsData(
-    val partidos: String,
-    val minutos: String,
-    val goles: String,
-    val asistencias: String,
-    val amarillas: String,
-    val rojas: String,
-    val tpp: String,       // Tiros por partido
-    val pdec: String,      // Pases decisivos
-    val regates: String,   // Regates
-    val mvp: String,       // Man of the Match
+    val matches: String,
+    val minutes: String,
+    val goals: String,
+    val assists: String,
+    val yellowCards: String,
+    val redCards: String,
+    val shotsPerGame: String,      // Shots per game
+    val keyPasses: String,         // Key passes
+    val dribbles: String,          // Dribbles
+    val mvp: String,               // Man of the Match
     val rating: String
 )

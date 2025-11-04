@@ -1,4 +1,4 @@
-package com.example.demo.webservice
+package com.example.demo.controller
 
 import com.example.demo.model.football.PlayerDto
 import com.example.demo.service.TeamService

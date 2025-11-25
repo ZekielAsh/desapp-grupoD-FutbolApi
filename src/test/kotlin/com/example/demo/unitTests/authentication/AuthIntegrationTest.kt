@@ -1,4 +1,4 @@
-package com.example.demo.unitTests.integration
+package com.example.demo.unitTests.authentication
 
 import com.example.demo.model.User
 import com.example.demo.repositories.UserRepository

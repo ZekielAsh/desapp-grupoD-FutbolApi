@@ -1,4 +1,4 @@
-package com.example.demo.security
+package com.example.demo.unitTests.security
 
 import com.example.demo.model.User
 import com.example.demo.repositories.UserRepository

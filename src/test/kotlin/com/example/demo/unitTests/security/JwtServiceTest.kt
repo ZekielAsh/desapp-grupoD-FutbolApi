@@ -1,9 +1,6 @@
-package com.example.demo.security
+package com.example.demo.unitTests.security
 
 import com.example.demo.security.JwtService
-import io.jsonwebtoken.Claims
-import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.security.Keys
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*

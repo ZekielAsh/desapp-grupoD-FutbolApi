@@ -9,6 +9,7 @@ import com.example.demo.model.prediction.TrendAnalysis
 import com.example.demo.model.prediction.WinProbabilities
 import com.google.common.annotations.VisibleForTesting
 import org.springframework.stereotype.Service
+import kotlin.times
 
 @Service
 class PredictionService(
@@ -117,14 +118,36 @@ class PredictionService(
         var awayP = 0.33 - ratingDiff * 0.03 - goalsDiff * 0.02 - formDiff * 0.04
         var drawP = 0.34
 
-        val sum = homeP + drawP + awayP
+        // Evitar negativos
+        val raw = listOf(
+            maxOf(0.0, homeP),
+            maxOf(0.0, drawP),
+            maxOf(0.0, awayP)
+        )
+
+        var sum = raw.sum()
+        // Si t0do es cero, dar igual probabilidad
+        val normalizedRaw = if (sum <= 0.0) listOf(1.0, 1.0, 1.0) else raw
+        sum = normalizedRaw.sum()
+
+        // Convertir a porcentajes
+        val unrounded = normalizedRaw.map { it / sum * 100.0 }
+        val rounded = unrounded.map { kotlin.math.round(it * 100.0) / 100.0 }.toMutableList() // 2 decimales
+
+        // Ajustar la suma a 100% añadiendo la diferencia al más grande (evita problemas por redondeo)
+        val diff = kotlin.math.round((100.0 - rounded.sum()) * 100.0) / 100.0
+        if (diff != 0.0) {
+            val maxIndex = rounded.indices.maxByOrNull { rounded[it] } ?: 0
+            rounded[maxIndex] = kotlin.math.round((rounded[maxIndex] + diff) * 100.0) / 100.0
+        }
 
         return WinProbabilities(
-            homeWin = homeP / sum,
-            draw = drawP / sum,
-            awayWin = awayP / sum
+            homeWin = rounded[0],
+            draw = rounded[1],
+            awayWin = rounded[2]
         )
     }
+
 
     @VisibleForTesting
     internal fun computeProbabilitiesForTest(

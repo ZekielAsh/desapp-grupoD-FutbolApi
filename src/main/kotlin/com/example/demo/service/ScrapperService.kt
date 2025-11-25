@@ -256,7 +256,7 @@ class ScrapperService(private val webDriver: WebDriver) {
         val allCompetitionStats = mutableListOf<CompetitionStats>()
         var totalAverageStats: StatsData? = null
 
-        val mainContentWait = WebDriverWait(webDriver, Duration.ofSeconds(15))
+        val mainContentWait = WebDriverWait(webDriver, Duration.ofSeconds(30))
         val js = webDriver as JavascriptExecutor
 
         try {
@@ -269,30 +269,111 @@ class ScrapperService(private val webDriver: WebDriver) {
                 js.executeScript("return document.readyState") == "complete"
             }
 
-            Thread.sleep(2000)
+            Thread.sleep(3000)
 
             // 3. Handle pop-ups
             handleConsentPopups()
 
-            // 4. Wait for statistics table
-            val tableBodySelector = By.id("player-table-statistics-body")
-            mainContentWait.until(ExpectedConditions.visibilityOfElementLocated(tableBodySelector))
-            println("Statistics table found.")
+            // 4. Wait for statistics table with multiple strategies
+            println("Searching for player statistics table...")
+
+            val tableBody = try {
+                // Strategy 1: Try common ID patterns for player stats
+                println("Strategy 1: Trying ID 'player-table-statistics-body'...")
+                mainContentWait.until(ExpectedConditions.presenceOfElementLocated(
+                    By.id("player-table-statistics-body")
+                ))
+            } catch (e1: Exception) {
+                println("Strategy 1 failed, trying alternative selectors...")
+                try {
+                    // Strategy 2: Try other common IDs
+                    println("Strategy 2: Trying alternative IDs...")
+                    mainContentWait.until(ExpectedConditions.presenceOfElementLocated(
+                        By.cssSelector("#player-tournament-stats-summary tbody, #statistics-table-summary tbody, " +
+                                "div[id*='player-tournament'] tbody, div[id*='statistics-summary'] tbody")
+                    ))
+                } catch (e2: Exception) {
+                    println("Strategy 2 failed, trying XPath...")
+                    try {
+                        // Strategy 3: Look for any table in statistics sections
+                        println("Strategy 3: Looking for tables in statistics containers...")
+                        mainContentWait.until(ExpectedConditions.presenceOfElementLocated(
+                            By.xpath("//div[contains(@id, 'statistics') or contains(@id, 'tournament')]//table//tbody[.//tr]")
+                        ))
+                    } catch (e3: Exception) {
+                        println("Strategy 3 failed, trying to click tabs...")
+                        try {
+                            // Strategy 4: Click on Statistics/Summary tab if exists
+                            println("Strategy 4: Trying to click on Statistics/Summary tab...")
+                            val statsTab = webDriver.findElements(By.xpath(
+                                "//a[contains(text(), 'Estadísticas') or contains(text(), 'Statistics') or " +
+                                "contains(text(), 'Resumen') or contains(text(), 'Summary')]"
+                            ))
+
+                            if (statsTab.isNotEmpty()) {
+                                println("Found tab, clicking...")
+                                statsTab[0].click()
+                                Thread.sleep(3000)
+                            }
+
+                            mainContentWait.until(ExpectedConditions.presenceOfElementLocated(
+                                By.cssSelector("tbody tr td, tbody tr th")
+                            ))
+                        } catch (e4: Exception) {
+                            println("Strategy 4 failed, analyzing page structure...")
+
+                            // Strategy 5: Debug - find any tbody with content
+                            println("Strategy 5: Looking for any tbody with rows...")
+                            val bodyHTML = js.executeScript("return document.body.innerHTML").toString()
+
+                            // Log what we found in the HTML
+                            println("Page analysis:")
+                            println("  - Contains 'statistics': ${bodyHTML.contains("statistics", ignoreCase = true)}")
+                            println("  - Contains 'tournament': ${bodyHTML.contains("tournament", ignoreCase = true)}")
+                            println("  - Contains 'player': ${bodyHTML.contains("player", ignoreCase = true)}")
+
+                            // Try to find any tbody
+                            val anyTbody = webDriver.findElements(By.tagName("tbody"))
+                            println("  - Found ${anyTbody.size} tbody elements on page")
+
+                            if (anyTbody.isNotEmpty()) {
+                                // Find the first tbody that has rows with actual data
+                                anyTbody.firstOrNull { tbody ->
+                                    val rows = tbody.findElements(By.tagName("tr"))
+                                    rows.size > 0 && rows.any { row ->
+                                        val cells = row.findElements(By.xpath("./th | ./td"))
+                                        cells.size >= 10 // Table should have many columns for stats
+                                    }
+                                } ?: throw RuntimeException("No tbody with statistical data found")
+                            } else {
+                                throw RuntimeException("No tbody elements found on page at all")
+                            }
+                        }
+                    }
+                }
+            }
+
+            println("Statistics table found successfully!")
 
             // Scroll to table to ensure it's fully loaded
-            val tableBody = webDriver.findElement(tableBodySelector)
             js.executeScript("arguments[0].scrollIntoView(true);", tableBody)
-            Thread.sleep(1500)
+            Thread.sleep(2000)
 
-            // 5. Get the number of rows dynamically
-            val rowCount = webDriver.findElements(By.cssSelector("#player-table-statistics-body tr")).size
+            // 5. Get the number of rows dynamically from the found table
+            val rowCount = tableBody.findElements(By.tagName("tr")).size
             println("Processing $rowCount rows (competitions + total/average)...")
 
             // Process each row by re-querying to avoid stale elements
             for (i in 0 until rowCount) {
                 try {
-                    // Re-query the specific row each time to avoid stale element references
-                    val row = webDriver.findElement(By.cssSelector("#player-table-statistics-body tr:nth-child(${i + 1})"))
+                    // Re-query rows from the tableBody to avoid stale element references
+                    val rows = tableBody.findElements(By.tagName("tr"))
+                    if (i >= rows.size) {
+                        println("Row ${i + 1}: Index out of bounds, skipping")
+                        continue
+                    }
+
+                    val row = rows[i]
 
                     // Get all cells (both th and td elements)
                     val allCells = row.findElements(By.xpath("./th | ./td"))
@@ -301,7 +382,7 @@ class ScrapperService(private val webDriver: WebDriver) {
 
                     if (allCells.size >= 12) {
                         // Check if it's a competition row (has tournament link in first cell)
-                        val linkElements = allCells[0].findElements(By.cssSelector("a.tournament-link"))
+                        val linkElements = allCells[0].findElements(By.cssSelector("a.tournament-link, a[href*='/Regions/'], a[href*='/tournaments/']"))
 
                         if (linkElements.isNotEmpty()) {
                             // This is a competition row
@@ -343,7 +424,7 @@ class ScrapperService(private val webDriver: WebDriver) {
                                 rating = allCells.getOrNull(11)?.text?.trim()?.takeIf { it.isNotBlank() } ?: "-"
                             )
 
-                            println("Total/Average - Matches: ${totalAverageStats?.matches} - Goals: ${totalAverageStats?.goals}")
+                            println("Total/Average - Matches: ${totalAverageStats.matches} - Goals: ${totalAverageStats.goals}")
                         }
                     } else {
                         println("Row ${i + 1}: Insufficient cells (${allCells.size})")

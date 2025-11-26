@@ -1,6 +1,13 @@
 package com.example.demo.security
 
 import com.example.demo.model.User
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.ExampleObject
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
@@ -13,6 +20,7 @@ import com.example.demo.repositories.UserRepository
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Authentication", description = "User authentication endpoints")
 class AuthController(
     private val authenticationManager: AuthenticationManager,
     private val jwtService: JwtService,
@@ -21,8 +29,27 @@ class AuthController(
     private val passwordEncoder: PasswordEncoder
 ) {
 
+    @Operation(summary = "User login", description = "Authenticate user and get JWT token")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Login successful",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = AuthResponse::class),
+                examples = [ExampleObject(value = """{"token": "string"}""")]
+            )]),
+        ApiResponse(responseCode = "401", description = "Invalid credentials")
+    ])
     @PostMapping("/login")
-    fun authenticate(@RequestBody request: AuthRequest): ResponseEntity<AuthResponse> {
+    fun authenticate(
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Login credentials",
+            required = true,
+            content = [Content(
+                mediaType = "application/json",
+                schema = Schema(implementation = AuthRequest::class),
+                examples = [ExampleObject(value = """{"username": "string", "password": "string"}""")]
+            )]
+        )
+        @RequestBody request: AuthRequest
+    ): ResponseEntity<AuthResponse> {
         try {
             val authToken = UsernamePasswordAuthenticationToken(request.username, request.password)
             authenticationManager.authenticate(authToken)
@@ -38,8 +65,27 @@ class AuthController(
         }
     }
 
+    @Operation(summary = "User registration", description = "Register a new user and get JWT token")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Registration successful",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = AuthResponse::class),
+                examples = [ExampleObject(value = """{"token": "string"}""")]
+            )]),
+        ApiResponse(responseCode = "409", description = "Username already exists")
+    ])
     @PostMapping("/register")
-    fun register(@RequestBody req: RegisterRequest): ResponseEntity<AuthResponse> {
+    fun register(
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Registration credentials",
+            required = true,
+            content = [Content(
+                mediaType = "application/json",
+                schema = Schema(implementation = RegisterRequest::class),
+                examples = [ExampleObject(value = """{"username": "string", "password": "string"}""")]
+            )]
+        )
+        @RequestBody req: RegisterRequest
+    ): ResponseEntity<AuthResponse> {
         if (userRepository.existsByUsername(req.username)) {
             return ResponseEntity.status(409).build()
         }
@@ -54,6 +100,24 @@ class AuthController(
     }
 }
 
-data class AuthRequest(val username: String, val password: String)
-data class RegisterRequest(val username: String, val password: String)
-data class AuthResponse(val token: String)
+@Schema(description = "Authentication request")
+data class AuthRequest(
+    @Schema(description = "Username", example = "string")
+    val username: String,
+    @Schema(description = "Password", example = "string")
+    val password: String
+)
+
+@Schema(description = "Registration request")
+data class RegisterRequest(
+    @Schema(description = "Username", example = "string")
+    val username: String,
+    @Schema(description = "Password", example = "string")
+    val password: String
+)
+
+@Schema(description = "Authentication response")
+data class AuthResponse(
+    @Schema(description = "JWT token", example = "string")
+    val token: String
+)

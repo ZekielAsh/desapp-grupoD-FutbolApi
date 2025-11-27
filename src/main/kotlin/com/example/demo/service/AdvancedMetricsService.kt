@@ -6,6 +6,7 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
+import java.time.LocalDate
 
 @Service
 class AdvancedMetricsService(
@@ -147,7 +148,7 @@ class AdvancedMetricsService(
             return TeamAdvancedMetrics(
                 teamId = teamId,
                 teamName = teamName,
-                season = "2024",
+                season = getCurrentSeason(),
                 averageGoalsScored = avgGoalsScored,
                 averageGoalsConceded = avgGoalsConceded,
                 cleanSheets = cleanSheets,
@@ -199,42 +200,29 @@ class AdvancedMetricsService(
             // Get player stats from scraping service
             val playerStats = scrapperService.getPlayerSummaryStats(playerId, playerName)
 
-            // Calculate metrics from competitions
-            val allCompetitions = playerStats.competitions
+            // Use totalAverage data instead of summing competitions
+            // This is important because matches format is like "10(2)" where (2) means substitute appearances
+            val totalAvg = playerStats.totalAverage
 
-            if (allCompetitions.isEmpty()) {
+            if (totalAvg == null) {
                 return createEmptyPlayerMetrics(playerId, playerName)
             }
 
-            var totalMatches = 0
-            var totalMinutes = 0
-            var totalGoals = 0
-            var totalAssists = 0
-            var totalYellowCards = 0
-            var totalRedCards = 0
-            var totalKeyPasses = 0.0
-            var totalDribbles = 0.0
-            var totalShots = 0.0
-            var totalRating = 0.0
-            var competitionCount = 0
+            // Parse matches - format is "X(Y)" where X is total matches and Y is substitute appearances
+            val matchesText = totalAvg.matches
+            val totalMatches = matchesText.split("(").firstOrNull()?.toIntOrNull() ?: 0
 
-            allCompetitions.forEach { comp ->
-                val stats = comp.statistics
+            val totalMinutes = totalAvg.minutes.toIntOrNull() ?: 0
+            val totalGoals = totalAvg.goals.toIntOrNull() ?: 0
+            val totalAssists = totalAvg.assists.toIntOrNull() ?: 0
+            val totalYellowCards = totalAvg.yellowCards.toIntOrNull() ?: 0
+            val totalRedCards = totalAvg.redCards.toIntOrNull() ?: 0
+            val shotsPerGame = totalAvg.shotsPerGame.toDoubleOrNull() ?: 0.0
+            val keyPassesPer90 = totalAvg.keyPasses.toDoubleOrNull() ?: 0.0
+            val dribblesPer90 = totalAvg.dribbles.toDoubleOrNull() ?: 0.0
+            val avgRating = totalAvg.rating.toDoubleOrNull() ?: 0.0
 
-                totalMatches += stats.matches.toIntOrNull() ?: 0
-                totalMinutes += stats.minutes.toIntOrNull() ?: 0
-                totalGoals += stats.goals.toIntOrNull() ?: 0
-                totalAssists += stats.assists.toIntOrNull() ?: 0
-                totalYellowCards += stats.yellowCards.toIntOrNull() ?: 0
-                totalRedCards += stats.redCards.toIntOrNull() ?: 0
-                totalKeyPasses += stats.keyPasses.toDoubleOrNull() ?: 0.0
-                totalDribbles += stats.dribbles.toDoubleOrNull() ?: 0.0
-                totalShots += stats.shotsPerGame.toDoubleOrNull() ?: 0.0
-                totalRating += stats.rating.toDoubleOrNull() ?: 0.0
-                competitionCount++
-            }
-
-            val avgRating = if (competitionCount > 0) (totalRating / competitionCount).roundTo(2) else 0.0
+            // Basic metrics
             val goalsPerMatch = if (totalMatches > 0) (totalGoals.toDouble() / totalMatches).roundTo(2) else 0.0
             val assistsPerMatch = if (totalMatches > 0) (totalAssists.toDouble() / totalMatches).roundTo(2) else 0.0
 
@@ -245,20 +233,64 @@ class AdvancedMetricsService(
             val goalContribution = totalGoals + totalAssists
             val goalContributionPer90 = if (minutesPer90 > 0) (goalContribution / minutesPer90).roundTo(2) else 0.0
 
-            val keyPassesPer90 = if (minutesPer90 > 0) (totalKeyPasses / minutesPer90).roundTo(2) else 0.0
-            val dribblesPer90 = if (minutesPer90 > 0) (totalDribbles / minutesPer90).roundTo(2) else 0.0
-            val shotsPerGame = if (totalMatches > 0) (totalShots / totalMatches).roundTo(2) else 0.0
-
             val minutesPerGoal = if (totalGoals > 0) (totalMinutes.toDouble() / totalGoals).roundTo(2) else null
             val minutesPerAssist = if (totalAssists > 0) (totalMinutes.toDouble() / totalAssists).roundTo(2) else null
 
             val yellowCardsPerMatch = if (totalMatches > 0) (totalYellowCards.toDouble() / totalMatches).roundTo(2) else 0.0
             val redCardsPerMatch = if (totalMatches > 0) (totalRedCards.toDouble() / totalMatches).roundTo(2) else 0.0
 
+            // CALCULATED METRICS (not directly from WhoScored)
+
+            // 1. Shot Accuracy: goals per shot ratio (higher = more clinical)
+            val totalShots = if (totalMatches > 0) shotsPerGame * totalMatches else 0.0
+            val shotAccuracy = if (totalShots > 0) ((totalGoals.toDouble() / totalShots) * 100).roundTo(2) else 0.0
+
+            // 2. Creative Efficiency: assists per key pass ratio (how often key passes lead to goals)
+            val totalKeyPasses = if (minutesPer90 > 0) keyPassesPer90 * minutesPer90 else 0.0
+            val creativeEfficiency = if (totalKeyPasses > 0) ((totalAssists.toDouble() / totalKeyPasses) * 100).roundTo(2) else 0.0
+
+            // 3. Dribble Success Rate: estimate based on dribbles per 90 (normalized)
+            // Higher dribbles per 90 suggests successful dribbling
+            val dribbleSuccessRate = ((dribblesPer90 / 5.0) * 100).coerceIn(0.0, 100.0).roundTo(2)
+
+            // 4. Playing Time Percentage: how much of total possible minutes played
+            val maxPossibleMinutes = totalMatches * 90.0
+            val playingTimePercentage = if (maxPossibleMinutes > 0)
+                ((totalMinutes.toDouble() / maxPossibleMinutes) * 100).roundTo(2) else 0.0
+
+            val efficiency = EfficiencyMetrics(
+                shotAccuracy = shotAccuracy,
+                creativeEfficiency = creativeEfficiency,
+                dribbleSuccessRate = dribbleSuccessRate,
+                playingTimePercentage = playingTimePercentage
+            )
+
+            // 5. Impact Score: weighted combination of all offensive contributions
+            // Formula: (goals * 3 + assists * 2 + keyPasses + dribbles) / matches * rating factor
+            val rawImpact = if (totalMatches > 0) {
+                ((totalGoals * 3.0 + totalAssists * 2.0 + totalKeyPasses + (dribblesPer90 * minutesPer90)) / totalMatches)
+            } else 0.0
+            val ratingFactor = avgRating / 10.0 // Normalize rating (typically 6-9) to 0.6-0.9
+            val impactScore = (rawImpact * ratingFactor).roundTo(2)
+
+            // 6. Versatility Index: measures how well-rounded a player is
+            // Based on balance between goals, assists, key passes, dribbles
+            val metrics = listOf(goalsPer90, assistsPer90, keyPassesPer90, dribblesPer90)
+            val avgMetric = metrics.average()
+            val variance = if (avgMetric > 0) {
+                metrics.map { (it - avgMetric).let { diff -> diff * diff } }.average()
+            } else 0.0
+            // Lower variance = more balanced = higher versatility
+            // Normalize to 0-100 scale
+            val versatilityIndex = if (avgMetric > 0) {
+                val coefficientOfVariation = kotlin.math.sqrt(variance) / avgMetric
+                ((1 - coefficientOfVariation.coerceIn(0.0, 1.0)) * 100).roundTo(2)
+            } else 0.0
+
             return PlayerAdvancedMetrics(
                 playerId = playerId,
                 playerName = playerName,
-                season = "2024",
+                season = getCurrentSeason(),
                 totalMatches = totalMatches,
                 totalMinutes = totalMinutes,
                 goalsPerMatch = goalsPerMatch,
@@ -278,7 +310,10 @@ class AdvancedMetricsService(
                     redCards = totalRedCards,
                     yellowCardsPerMatch = yellowCardsPerMatch,
                     redCardsPerMatch = redCardsPerMatch
-                )
+                ),
+                efficiency = efficiency,
+                impactScore = impactScore,
+                versatilityIndex = versatilityIndex
             )
 
         } catch (ex: Exception) {
@@ -290,7 +325,7 @@ class AdvancedMetricsService(
         return TeamAdvancedMetrics(
             teamId = teamId,
             teamName = teamName,
-            season = "2024",
+            season = getCurrentSeason(),
             averageGoalsScored = 0.0,
             averageGoalsConceded = 0.0,
             cleanSheets = 0,
@@ -312,7 +347,7 @@ class AdvancedMetricsService(
         return PlayerAdvancedMetrics(
             playerId = playerId,
             playerName = playerName,
-            season = "2024",
+            season = getCurrentSeason(),
             totalMatches = 0,
             totalMinutes = 0,
             goalsPerMatch = 0.0,
@@ -327,8 +362,36 @@ class AdvancedMetricsService(
             shotsPerGame = 0.0,
             minutesPerGoal = null,
             minutesPerAssist = null,
-            discipline = DisciplineData(0, 0, 0.0, 0.0)
+            discipline = DisciplineData(0, 0, 0.0, 0.0),
+            efficiency = EfficiencyMetrics(0.0, 0.0, 0.0, 0.0),
+            impactScore = 0.0,
+            versatilityIndex = 0.0
         )
+    }
+
+    /**
+     * Calculates the current football season based on today's date.
+     * Football seasons typically run from July/August to May/June.
+     * - If current month is July (7) to December (12): season is currentYear/nextYear
+     * - If current month is January (1) to June (6): season is previousYear/currentYear
+     *
+     * Example:
+     * - 27/11/2025 → "2025/2026"
+     * - 15/03/2025 → "2024/2025"
+     * - 01/08/2025 → "2025/2026"
+     */
+    private fun getCurrentSeason(): String {
+        val today = LocalDate.now()
+        val year = today.year
+        val month = today.monthValue
+
+        return if (month >= 7) {
+            // July to December: current season is year/year+1
+            "$year/${year + 1}"
+        } else {
+            // January to June: current season is year-1/year
+            "${year - 1}/$year"
+        }
     }
 
     private fun Double.roundTo(decimals: Int): Double {

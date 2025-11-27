@@ -99,7 +99,7 @@ class AdvancedMetricsController(
 
     @Operation(
         summary = "Get player advanced metrics",
-        description = "Retrieve comprehensive statistical analysis for a player including per-90 stats and efficiency metrics"
+        description = "Retrieve comprehensive statistical analysis for a player including per-90 stats, efficiency metrics, and calculated performance indicators"
     )
     @ApiResponses(value = [
         ApiResponse(
@@ -131,7 +131,15 @@ class AdvancedMetricsController(
     "redCards": 0,
     "yellowCardsPerMatch": 0.0,
     "redCardsPerMatch": 0.0
-  }
+  },
+  "efficiency": {
+    "shotAccuracy": 0.0,
+    "creativeEfficiency": 0.0,
+    "dribbleSuccessRate": 0.0,
+    "playingTimePercentage": 0.0
+  },
+  "impactScore": 0.0,
+  "versatilityIndex": 0.0
 }""")]
             )]),
         ApiResponse(

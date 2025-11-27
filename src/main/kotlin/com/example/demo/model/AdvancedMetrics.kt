@@ -95,7 +95,18 @@ data class PlayerAdvancedMetrics(
     val shotsPerGame: Double,
     val minutesPerGoal: Double?,
     val minutesPerAssist: Double?,
-    val discipline: DisciplineData
+    val discipline: DisciplineData,
+    // Calculated Metrics (not directly from WhoScored)
+    val efficiency: EfficiencyMetrics,
+    val impactScore: Double,
+    val versatilityIndex: Double
+)
+
+data class EfficiencyMetrics(
+    val shotAccuracy: Double,          // goals / shots ratio
+    val creativeEfficiency: Double,     // assists / keyPasses ratio
+    val dribbleSuccessRate: Double,     // estimated from dribbles per 90
+    val playingTimePercentage: Double   // minutes / (matches * 90) to see how much of full matches played
 )
 
 data class DisciplineData(

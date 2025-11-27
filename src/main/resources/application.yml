@@ -16,3 +16,22 @@ spring:
 football-data:
   base-url: https://api.football-data.org/v4
   api-key: ${FOOTBALL_DATA_API_KEY}
+
+# Actuator and Prometheus configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true

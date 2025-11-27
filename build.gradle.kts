@@ -47,6 +47,13 @@ dependencies {
     implementation("io.github.bonigarcia:webdrivermanager:$webDriverManagerVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.springframework.boot:spring-boot-starter-aop")
+    // Actuator for health checks and metrics
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    // Micrometer Prometheus registry
+    implementation("io.micrometer:micrometer-registry-prometheus")
+    // Spring Cache for performance optimization
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
     runtimeOnly("io.jsonwebtoken:jjwt-impl:$jsonWebTokenVersion")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jsonWebTokenVersion")

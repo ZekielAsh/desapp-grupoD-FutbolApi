@@ -32,7 +32,15 @@ class SecurityConfig(
         http
             .csrf { it.disable() }
             .authorizeHttpRequests {
-                it.requestMatchers(org.springframework.http.HttpMethod.GET, "/teams/*/players", "/*/next-matches", "/api/audit/*", "/predictions/match").authenticated()
+                it.requestMatchers(org.springframework.http.HttpMethod.GET,
+                    "/teams/*/players",
+                    "/*/next-matches",
+                    "/api/audit/*",
+                    "/predictions/match",
+                    "/teams/compare",
+                    "/metrics/teams/*",
+                    "/metrics/players/*/*"
+                ).authenticated()
                 it.requestMatchers(org.springframework.http.HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
                 it.requestMatchers("/auth/**").permitAll()
                 it.requestMatchers(
@@ -40,6 +48,8 @@ class SecurityConfig(
                     "/swagger-ui.html",
                     "/swagger-ui/**"
                 ).permitAll()
+                // Allow access to Actuator endpoints (health, metrics, prometheus)
+                it.requestMatchers("/actuator/**").permitAll()
                 it.anyRequest().authenticated()
             }
             .sessionManagement {

@@ -1,0 +1,15 @@
+# Prometheus configuration file
+global:
+  scrape_interval: 15s     # How often to scrape targets
+  evaluation_interval: 15s # How often to evaluate rules
+
+# Scrape configurations
+scrape_configs:
+  # Job for Football API
+  - job_name: 'football-api'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          application: 'Football API'
+

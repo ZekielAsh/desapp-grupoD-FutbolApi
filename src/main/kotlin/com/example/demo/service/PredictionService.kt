@@ -8,8 +8,8 @@ import com.example.demo.model.prediction.RecentForm
 import com.example.demo.model.prediction.TrendAnalysis
 import com.example.demo.model.prediction.WinProbabilities
 import com.google.common.annotations.VisibleForTesting
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
-import kotlin.times
 
 @Service
 class PredictionService(
@@ -17,6 +17,7 @@ class PredictionService(
     private val teamService: TeamService
 ) {
 
+    @Cacheable("predictions", key = "#homeTeam + '_' + #awayTeam")
     fun predictMatch(homeTeam: String, awayTeam: String, homeTeamId: Long, awayTeamId: Long): MatchPredictionResponse {
 
         val homeData = scrapperService.getTeamPlayersByName(homeTeam)
@@ -25,8 +26,8 @@ class PredictionService(
         val homeStats = aggregateStats(homeData)
         val awayStats = aggregateStats(awayData)
 
-        val homeForm = computeRecentForm(homeTeamId)
-        val awayForm = computeRecentForm(awayTeamId)
+        val homeForm = computeRecentForm(homeTeamId, homeTeam)
+        val awayForm = computeRecentForm(awayTeamId, awayTeam)
 
         val trend = TrendAnalysis(
             avgRating = (homeStats.avgRating + awayStats.avgRating) / 2,
@@ -72,7 +73,7 @@ class PredictionService(
 
         for (m in matches) {
 
-            val isHome = m.homeTeam.equals(teamName, ignoreCase = true)
+            val isHome = m.homeTeam.name?.equals(teamName, ignoreCase = true) ?: false
 
             val homeGoals = m.score?.fullTime?.home ?: 0
             val awayGoals = m.score?.fullTime?.away ?: 0
@@ -114,9 +115,9 @@ class PredictionService(
         val goalsDiff = home.totalGoals - away.totalGoals
         val formDiff = homeForm.formScore - awayForm.formScore
 
-        var homeP = 0.33 + ratingDiff * 0.03 + goalsDiff * 0.02 + formDiff * 0.04
-        var awayP = 0.33 - ratingDiff * 0.03 - goalsDiff * 0.02 - formDiff * 0.04
-        var drawP = 0.34
+        val homeP = 0.33 + ratingDiff * 0.03 + goalsDiff * 0.02 + formDiff * 0.04
+        val awayP = 0.33 - ratingDiff * 0.03 - goalsDiff * 0.02 - formDiff * 0.04
+        val drawP = 0.34
 
         // Evitar negativos
         val raw = listOf(

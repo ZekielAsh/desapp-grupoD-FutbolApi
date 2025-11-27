@@ -33,6 +33,7 @@ data class CompetitionDto(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class TeamInfoDto(
+    val id: Long? = null,
     val name: String? = null,
     val shortName: String? = null,
     val tla: String? = null,
@@ -42,10 +43,10 @@ data class TeamInfoDto(
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class MatchDto(
     val competitionName: String?,
-    val homeTeam: String?,
-    val awayTeam: String?,
+    val homeTeam: TeamInfoDto,
+    val awayTeam: TeamInfoDto,
     val utcDate: String?,
-    val score: ScoreDto? // Ahora se incluye el resultado del partido
+    val score: ScoreDto?
 ) {
     @JsonCreator
     constructor(
@@ -56,8 +57,8 @@ data class MatchDto(
         @JsonProperty("score") scoreDto: ScoreDto?
     ) : this(
         competitionName = competition?.name,
-        homeTeam = homeTeamDto?.name,
-        awayTeam = awayTeamDto?.name,
+        homeTeam = homeTeamDto ?: TeamInfoDto(),
+        awayTeam = awayTeamDto ?: TeamInfoDto(),
         utcDate = utcDate,
         score = scoreDto
     )
@@ -72,4 +73,35 @@ data class ScoreDto(
 data class FullTimeScoreDto(
     val home: Int?,
     val away: Int?
-    )
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class StandingsResponse(
+    val standings: List<StandingDto> = emptyList()
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class StandingDto(
+    val table: List<TableEntryDto> = emptyList()
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class TableEntryDto(
+    val position: Int,
+    val team: TeamBasicDto,
+    val playedGames: Int,
+    val won: Int,
+    val draw: Int,
+    val lost: Int,
+    val points: Int,
+    val goalsFor: Int,
+    val goalsAgainst: Int,
+    val goalDifference: Int
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class TeamBasicDto(
+    val id: Long,
+    val name: String
+)
+

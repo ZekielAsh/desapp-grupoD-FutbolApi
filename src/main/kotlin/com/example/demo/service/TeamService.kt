@@ -6,6 +6,7 @@ import com.example.demo.model.football.MatchDto
 import com.example.demo.model.football.MatchesResponse
 import com.example.demo.model.football.PlayerDto
 import com.example.demo.model.football.TeamResponse
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
@@ -14,6 +15,7 @@ import org.springframework.web.client.RestClientResponseException
 @Service
 class TeamService(private val footballRestClient: RestClient, private val scrapperService: ScrapperService) {
 
+    @Cacheable("teamPlayers", key = "#teamId")
     fun getPlayers(teamId: Long): List<PlayerDto> {
         try {
             val team = footballRestClient.get()
@@ -31,7 +33,7 @@ class TeamService(private val footballRestClient: RestClient, private val scrapp
             throw ex
         }
     }
-
+    @Cacheable("teamMatches", key = "#teamId")
     fun getTeamPlayersByName(teamName: String): TeamPlayersResponse {
         return scrapperService.getTeamPlayersByName(teamName)
     }

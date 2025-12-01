@@ -107,8 +107,20 @@ class TeamServiceTest {
     fun `test getNextMatchesByTeamName returns matches successfully`() {
         val teamId = 65L
         val matches = listOf(
-            MatchDto("La Liga", "Barcelona", "Real Madrid", "2025-11-15T20:00:00Z", null),
-            MatchDto("Champions League", "Barcelona", "Bayern", "2025-11-20T21:00:00Z", null)
+            MatchDto(
+                competitionName = "La Liga",
+                homeTeam = TeamInfoDto(id = 65, name = "Barcelona", shortName = "FCB", crest = null),
+                awayTeam = TeamInfoDto(id = 86, name = "Real Madrid", shortName = "RMA", crest = null),
+                utcDate = "2025-11-15T20:00:00Z",
+                score = null
+            ),
+            MatchDto(
+                competitionName = "Champions League",
+                homeTeam = TeamInfoDto(id = 65, name = "Barcelona", shortName = "FCB", crest = null),
+                awayTeam = TeamInfoDto(id = 5, name = "Bayern", shortName = "FCB", crest = null),
+                utcDate = "2025-11-20T21:00:00Z",
+                score = null
+            )
         )
         val matchesResponse = MatchesResponse(matches)
 

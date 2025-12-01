@@ -7,6 +7,7 @@ import com.example.demo.model.prediction.TeamAggregateStats
 import com.example.demo.model.football.FullTimeScoreDto
 import com.example.demo.model.football.ScoreDto
 import com.example.demo.model.football.MatchDto
+import com.example.demo.model.football.TeamInfoDto
 import com.example.demo.service.PredictionService
 import com.example.demo.service.ScrapperService
 import com.example.demo.service.TeamService
@@ -50,23 +51,23 @@ class PredictionServiceTest {
         // Partidos finalizados
         val m1 = MatchDto(
             competitionName = "League",
-            homeTeam = "Home FC",
-            awayTeam = "Other",
+            homeTeam = TeamInfoDto(id = 1, name = "Home FC", shortName = "HFC", crest = null),
+            awayTeam = TeamInfoDto(id = 3, name = "Other", shortName = "OTH", crest = null),
             utcDate = "2025-01-01",
             score = ScoreDto(fullTime = FullTimeScoreDto(home = 2, away = 1))
         )
         val m2 = MatchDto(
             competitionName = "League",
-            homeTeam = "Other",
-            awayTeam = "Home FC",
+            homeTeam = TeamInfoDto(id = 3, name = "Other", shortName = "OTH", crest = null),
+            awayTeam = TeamInfoDto(id = 1, name = "Home FC", shortName = "HFC", crest = null),
             utcDate = "2025-01-02",
             score = ScoreDto(fullTime = FullTimeScoreDto(home = 0, away = 1))
         )
 
         val mAway = MatchDto(
             competitionName = "League",
-            homeTeam = "Away FC",
-            awayTeam = "Other",
+            homeTeam = TeamInfoDto(id = 2, name = "Away FC", shortName = "AFC", crest = null),
+            awayTeam = TeamInfoDto(id = 3, name = "Other", shortName = "OTH", crest = null),
             utcDate = "2025-01-01",
             score = ScoreDto(fullTime = FullTimeScoreDto(home = 1, away = 1))
         )
@@ -79,7 +80,7 @@ class PredictionServiceTest {
         assertEquals("Home FC", result.homeTeam)
         assertNotNull(result.statComparison)
         assertNotNull(result.probabilities)
-        assertTrue(result.probabilities.homeWin in 0.0..1.0)
+        assertTrue(result.probabilities.homeWin in 0.0..100.0)
 
         verify(scrapperService).getTeamPlayersByName(homeTeamName)
         verify(scrapperService).getTeamPlayersByName(awayTeamName)
@@ -97,7 +98,7 @@ class PredictionServiceTest {
 
         val probs = svc.computeProbabilitiesForTest(homeStats, awayStats, homeForm, awayForm)
 
-        assertEquals(1.0, probs.homeWin + probs.draw + probs.awayWin, 1e-6)
+        assertEquals(100.0, probs.homeWin + probs.draw + probs.awayWin, 1e-6)
     }
 
     @Test
@@ -106,15 +107,15 @@ class PredictionServiceTest {
 
         val m1 = MatchDto(
             competitionName = "C",
-            homeTeam = "T",
-            awayTeam = "Other",
+            homeTeam = TeamInfoDto(id = 10, name = "T", shortName = "T", crest = null),
+            awayTeam = TeamInfoDto(id = 20, name = "Other", shortName = "OTH", crest = null),
             utcDate = "2025-01-01",
             score = ScoreDto(fullTime = FullTimeScoreDto(2, 0))
         )
         val m2 = MatchDto(
             competitionName = "C",
-            homeTeam = "Other",
-            awayTeam = "T",
+            homeTeam = TeamInfoDto(id = 20, name = "Other", shortName = "OTH", crest = null),
+            awayTeam = TeamInfoDto(id = 10, name = "T", shortName = "T", crest = null),
             utcDate = "2025-01-02",
             score = ScoreDto(fullTime = FullTimeScoreDto(1, 1))
         )

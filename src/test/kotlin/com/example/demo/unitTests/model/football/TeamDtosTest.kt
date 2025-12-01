@@ -84,8 +84,20 @@ class TeamDtosTest {
     @Test
     fun `test MatchesResponse with matches`() {
         val matches = listOf(
-            MatchDto("La Liga", "Barcelona", "Real Madrid", "2025-11-15T20:00:00Z", null),
-            MatchDto("Champions League", "Bayern", "PSG", "2025-11-20T21:00:00Z", null)
+            MatchDto(
+                competitionName = "La Liga",
+                homeTeam = TeamInfoDto(id = 81, name = "Barcelona", shortName = "FCB", crest = "url"),
+                awayTeam = TeamInfoDto(id = 86, name = "Real Madrid", shortName = "RMA", crest = "url"),
+                utcDate = "2025-11-15T20:00:00Z",
+                score = null
+            ),
+            MatchDto(
+                competitionName = "Champions League",
+                homeTeam = TeamInfoDto(id = 5, name = "Bayern", shortName = "FCB", crest = "url"),
+                awayTeam = TeamInfoDto(id = 6, name = "PSG", shortName = "PSG", crest = "url"),
+                utcDate = "2025-11-20T21:00:00Z",
+                score = null
+            )
         )
 
         val response = MatchesResponse(matches = matches)
@@ -104,23 +116,23 @@ class TeamDtosTest {
     @Test
     fun `test TeamInfoDto creation`() {
         val teamInfo = TeamInfoDto(
+            id = 50,
             name = "Manchester City",
             shortName = "Man City",
-            tla = "MCI",
             crest = "https://example.com/crest.png"
         )
 
+        assertEquals(50, teamInfo.id)
         assertEquals("Manchester City", teamInfo.name)
         assertEquals("Man City", teamInfo.shortName)
-        assertEquals("MCI", teamInfo.tla)
         assertEquals("https://example.com/crest.png", teamInfo.crest)
     }
 
     @Test
     fun `test MatchDto with JsonCreator constructor`() {
         val competition = CompetitionDto("Serie A")
-        val homeTeam = TeamInfoDto("Juventus", "Juve", "JUV", null)
-        val awayTeam = TeamInfoDto("Inter", "Inter", "INT", null)
+        val homeTeam = TeamInfoDto(id = 1, name = "Juventus", shortName = "Juve", crest = null)
+        val awayTeam = TeamInfoDto(id = 2, name = "Inter", shortName = "Inter", crest = null)
         val score = ScoreDto(
             fullTime = FullTimeScoreDto(home = 2, away = 1)
         )
@@ -134,8 +146,8 @@ class TeamDtosTest {
         )
 
         assertEquals("Serie A", match.competitionName)
-        assertEquals("Juventus", match.homeTeam)
-        assertEquals("Inter", match.awayTeam)
+        assertEquals("Juventus", match.homeTeam.name)
+        assertEquals("Inter", match.awayTeam.name)
         assertEquals("2025-11-10T18:00:00Z", match.utcDate)
         assertNotNull(match.score)
         assertEquals(2, match.score?.fullTime?.home)
@@ -147,15 +159,15 @@ class TeamDtosTest {
     fun `test MatchDto with null values`() {
         val match = MatchDto(
             competitionName = null,
-            homeTeam = null,
-            awayTeam = null,
+            homeTeam = TeamInfoDto(id = null, name = null, shortName = null, crest = null),
+            awayTeam = TeamInfoDto(id = null, name = null, shortName = null, crest = null),
             utcDate = null,
             score = null
         )
 
         assertNull(match.competitionName)
-        assertNull(match.homeTeam)
-        assertNull(match.awayTeam)
+        assertNull(match.homeTeam.name)
+        assertNull(match.awayTeam.name)
         assertNull(match.utcDate)
     }
 

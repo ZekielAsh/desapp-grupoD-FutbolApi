@@ -60,6 +60,10 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.2.1")
+    testImplementation("com.tngtech.archunit:archunit-junit5-api:1.2.1")
+    testRuntimeOnly("com.tngtech.archunit:archunit-junit5-engine:1.2.1")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("com.h2database:h2:$h2Version")
@@ -98,6 +102,7 @@ tasks.test {
     // Enable dynamic agent loading for Mockito (suppress warnings in Java 21+)
     jvmArgs("-XX:+EnableDynamicAgentLoading")
     finalizedBy(tasks.jacocoTestReport)
+    environment("FOOTBALL_DATA_API_KEY", System.getenv("FOOTBALL_DATA_API_KEY") ?: "5764b841c2f946a3916de2c73742c198")
 }
 
 tasks.processTestResources {

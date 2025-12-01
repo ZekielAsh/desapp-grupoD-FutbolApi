@@ -1,10 +1,7 @@
 package com.example.demo.unitTests.controller
 
 import com.example.demo.controller.TeamController
-import com.example.demo.model.football.FullTimeScoreDto
-import com.example.demo.model.football.MatchDto
-import com.example.demo.model.football.PlayerDto
-import com.example.demo.model.football.ScoreDto
+import com.example.demo.model.football.*
 import com.example.demo.service.TeamService
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -61,8 +58,20 @@ class TeamControllerTest {
     fun `test getNextMatches returns matches successfully`() {
         val teamId = 65L
         val matches = listOf(
-            MatchDto("La Liga", "Barcelona", "Real Madrid", "2025-11-15T20:00:00Z", null),
-            MatchDto("Champions League", "Barcelona", "Bayern", "2025-11-20T21:00:00Z", null)
+            MatchDto(
+                competitionName = "La Liga",
+                homeTeam = TeamInfoDto(id = 81, name = "Barcelona", shortName = "FCB", crest = "url"),
+                awayTeam = TeamInfoDto(id = 86, name = "Real Madrid", shortName = "RMA", crest = "url"),
+                utcDate = "2025-11-15T20:00:00Z",
+                score = null
+            ),
+            MatchDto(
+                competitionName = "Champions League",
+                homeTeam = TeamInfoDto(id = 81, name = "Barcelona", shortName = "FCB", crest = "url"),
+                awayTeam = TeamInfoDto(id = 5, name = "Bayern", shortName = "FCB", crest = "url"),
+                utcDate = "2025-11-20T21:00:00Z",
+                score = null
+            )
         )
 
         whenever(teamService.getNextMatchesByTeamName(teamId)).thenReturn(matches)
@@ -134,8 +143,8 @@ class TeamControllerTest {
         val teamId = 65L
         val match = MatchDto(
             competitionName = "Liga",
-            homeTeam = "Barcelona",
-            awayTeam = "Sevilla",
+            homeTeam = TeamInfoDto(id = 81, name = "Barcelona", shortName = "FCB", crest = "url"),
+            awayTeam = TeamInfoDto(id = 70, name = "Sevilla", shortName = "SEV", crest = "url"),
             utcDate = "2025-11-10T18:00:00Z",
             score = ScoreDto(fullTime = FullTimeScoreDto(2, 1))
         )
@@ -146,7 +155,7 @@ class TeamControllerTest {
         val matchList = response.body as List<*>
         val result = matchList[0]
 
-        assertEquals("Barcelona", (result as MatchDto).homeTeam)
+        assertEquals("Barcelona", (result as MatchDto).homeTeam.name)
         assertEquals(2, result.score?.fullTime?.home)
     }
 
@@ -163,7 +172,13 @@ class TeamControllerTest {
         val teamId = 10L
         val players = listOf(PlayerDto(1, "X", "Forward", "AR", "2000-01-01", 9))
         val matches = listOf(
-            MatchDto("Liga", "Team", "Rival", "2025-01-01", null)
+            MatchDto(
+                competitionName = "Liga",
+                homeTeam = TeamInfoDto(id = 10, name = "Team", shortName = "TM", crest = "url"),
+                awayTeam = TeamInfoDto(id = 11, name = "Rival", shortName = "RIV", crest = "url"),
+                utcDate = "2025-01-01",
+                score = null
+            )
         )
 
         whenever(teamService.getPlayers(teamId)).thenReturn(players)
@@ -180,7 +195,4 @@ class TeamControllerTest {
         verify(teamService).getPlayers(teamId)
         verify(teamService).getNextMatchesByTeamName(teamId)
     }
-
-
 }
-

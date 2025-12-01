@@ -2,14 +2,13 @@ package com.example.demo.unitTests.controller
 
 import com.example.demo.controller.ApiAuditController
 import com.example.demo.model.ApiAuditLog
-import com.example.demo.repository.ApiAuditLogRepository
+import com.example.demo.service.ApiAuditService
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.*
-import org.springframework.data.domain.Sort
 import org.junit.jupiter.api.Assertions.*
 import java.time.LocalDateTime
 
@@ -17,7 +16,7 @@ import java.time.LocalDateTime
 class ApiAuditControllerTest {
 
     @Mock
-    private lateinit var apiAuditLogRepository: ApiAuditLogRepository
+    private lateinit var apiAuditService: ApiAuditService
 
     @InjectMocks
     private lateinit var apiAuditController: ApiAuditController
@@ -48,7 +47,7 @@ class ApiAuditControllerTest {
 
         val expectedLogs = listOf(log3, log2, log1)
 
-        whenever(apiAuditLogRepository.findAll(any<Sort>())).thenReturn(expectedLogs)
+        whenever(apiAuditService.getAllAuditLogs()).thenReturn(expectedLogs)
 
         val result = apiAuditController.getAllAuditLogs()
 
@@ -56,25 +55,17 @@ class ApiAuditControllerTest {
         assertEquals(log3.id, result[0].id)
         assertEquals(log2.id, result[1].id)
         assertEquals(log1.id, result[2].id)
-        verify(apiAuditLogRepository).findAll(argThat<Sort> {
-            val timestampOrder = this.getOrderFor("timestamp")
-            val idOrder = this.getOrderFor("id")
-
-            timestampOrder != null &&
-            timestampOrder.direction == Sort.Direction.DESC &&
-            idOrder != null &&
-            idOrder.direction == Sort.Direction.DESC
-        })
+        verify(apiAuditService).getAllAuditLogs()
     }
 
     @Test
     fun `test getAllAuditLogs returns empty list when no logs exist`() {
-        whenever(apiAuditLogRepository.findAll(any<Sort>())).thenReturn(emptyList())
+        whenever(apiAuditService.getAllAuditLogs()).thenReturn(emptyList())
 
         val result = apiAuditController.getAllAuditLogs()
 
         assertTrue(result.isEmpty())
-        verify(apiAuditLogRepository).findAll(any<Sort>())
+        verify(apiAuditService).getAllAuditLogs()
     }
 
     @Test
@@ -86,7 +77,7 @@ class ApiAuditControllerTest {
             wasSuccess = true
         )
 
-        whenever(apiAuditLogRepository.findAll(any<Sort>())).thenReturn(listOf(singleLog))
+        whenever(apiAuditService.getAllAuditLogs()).thenReturn(listOf(singleLog))
 
         val result = apiAuditController.getAllAuditLogs()
 
@@ -112,7 +103,7 @@ class ApiAuditControllerTest {
             errorMessage = "Error occurred"
         )
 
-        whenever(apiAuditLogRepository.findAll(any<Sort>())).thenReturn(listOf(failLog, successLog))
+        whenever(apiAuditService.getAllAuditLogs()).thenReturn(listOf(failLog, successLog))
 
         val result = apiAuditController.getAllAuditLogs()
 
@@ -128,7 +119,7 @@ class ApiAuditControllerTest {
         val putLogs = ApiAuditLog(httpMethod = "PUT", path = "/api/put", wasSuccess = true)
         val deleteLogs = ApiAuditLog(httpMethod = "DELETE", path = "/api/delete", wasSuccess = true)
 
-        whenever(apiAuditLogRepository.findAll(any<Sort>()))
+        whenever(apiAuditService.getAllAuditLogs())
             .thenReturn(listOf(getLogs, postLogs, putLogs, deleteLogs))
 
         val result = apiAuditController.getAllAuditLogs()

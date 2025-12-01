@@ -2,6 +2,7 @@ package com.example.demo.service
 
 import com.example.demo.model.ApiAuditLog
 import com.example.demo.repository.ApiAuditLogRepository
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -27,5 +28,16 @@ class ApiAuditService(
             println("Error saving audit log: ${e.message}")
             e.printStackTrace()
         }
+    }
+
+    /**
+     * Retrieves all audit logs sorted by timestamp descending.
+     */
+    fun getAllAuditLogs(): List<ApiAuditLog> {
+        val sort = Sort.by(
+            Sort.Order.desc("timestamp"),
+            Sort.Order.desc("id")
+        )
+        return auditLogRepository.findAll(sort)
     }
 }

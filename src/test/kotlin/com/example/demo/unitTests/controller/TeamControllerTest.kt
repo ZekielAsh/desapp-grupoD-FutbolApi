@@ -36,8 +36,9 @@ class TeamControllerTest {
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(2, response.body!!.size)
-        assertEquals("Player 1", response.body!![0].name)
+        val playerList = response.body as List<*>
+        assertEquals(2, playerList.size)
+        assertEquals("Player 1", (playerList[0] as PlayerDto).name)
         verify(teamService).getPlayers(teamId)
     }
 
@@ -51,7 +52,8 @@ class TeamControllerTest {
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertNotNull(response.body)
-        assertTrue(response.body!!.isEmpty())
+        val playerList = response.body as List<*>
+        assertTrue(playerList.isEmpty())
     }
 
     @Test
@@ -106,8 +108,8 @@ class TeamControllerTest {
 
         val response = teamController.getNextMatches(teamId)
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-        assertTrue(response.body.toString().contains("Error retrieving next matches"))
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        assertNotNull(response.body)
     }
 
     @Test
@@ -121,8 +123,11 @@ class TeamControllerTest {
         val response1 = teamController.getPlayers(1L)
         val response2 = teamController.getPlayers(2L)
 
-        assertEquals("Player A", response1.body!![0].name)
-        assertEquals("Player B", response2.body!![0].name)
+        val playerList1 = response1.body as List<*>
+        val playerList2 = response2.body as List<*>
+
+        assertEquals("Player A", (playerList1[0] as PlayerDto).name)
+        assertEquals("Player B", (playerList2[0] as PlayerDto).name)
     }
 
     @Test
@@ -134,8 +139,8 @@ class TeamControllerTest {
 
         val response = teamController.getPlayers(teamId)
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-        assertTrue(response.body!!.isEmpty())
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        assertNotNull(response.body)
     }
 
     @Test
@@ -187,9 +192,10 @@ class TeamControllerTest {
         val resp1 = teamController.getPlayers(teamId)
         val resp2 = teamController.getNextMatches(teamId)
 
-        val matchList = resp2.body as List<MatchDto>
+        val playerList = resp1.body as List<*>
+        val matchList = resp2.body as List<*>
 
-        assertEquals(1, resp1.body!!.size)
+        assertEquals(1, playerList.size)
         assertEquals(1, matchList.size)
 
         verify(teamService).getPlayers(teamId)

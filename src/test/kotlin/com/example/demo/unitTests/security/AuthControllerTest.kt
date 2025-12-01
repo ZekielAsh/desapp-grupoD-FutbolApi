@@ -60,7 +60,8 @@ class AuthControllerTest {
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(expectedToken, response.body!!.token)
+        val authResponse = response.body as AuthResponse
+        assertEquals(expectedToken, authResponse.token)
         verify(authenticationManager).authenticate(any<UsernamePasswordAuthenticationToken>())
     }
 
@@ -74,7 +75,7 @@ class AuthControllerTest {
         val response = authController.authenticate(authRequest)
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
-        assertNull(response.body)
+        assertNotNull(response.body) // Ahora retorna ErrorResponse
     }
 
     @Test
@@ -87,18 +88,18 @@ class AuthControllerTest {
         val response = authController.authenticate(authRequest)
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
-        assertNull(response.body)
+        assertNotNull(response.body) // Ahora retorna ErrorResponse
     }
 
     @Test
     fun `test register creates new user and returns token`() {
-        val registerRequest = RegisterRequest("newuser", "newpass")
+        val registerRequest = RegisterRequest("newuser", "newpass123")
         val encodedPassword = "encoded-password"
         val expectedToken = "new-user-token"
         val savedUser = User(id = 1L, username = "newuser", password = encodedPassword)
 
         whenever(userRepository.existsByUsername("newuser")).thenReturn(false)
-        whenever(passwordEncoder.encode("newpass")).thenReturn(encodedPassword)
+        whenever(passwordEncoder.encode("newpass123")).thenReturn(encodedPassword)
         whenever(userRepository.save(any<User>())).thenReturn(savedUser)
         whenever(userDetailsService.loadUserByUsername("newuser")).thenReturn(userDetails)
         whenever(jwtService.generateToken(userDetails)).thenReturn(expectedToken)
@@ -107,7 +108,8 @@ class AuthControllerTest {
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertNotNull(response.body)
-        assertEquals(expectedToken, response.body!!.token)
+        val authResponse = response.body as AuthResponse
+        assertEquals(expectedToken, authResponse.token)
         verify(userRepository).save(argThat {
             username == "newuser" && password == encodedPassword
         })
@@ -115,14 +117,14 @@ class AuthControllerTest {
 
     @Test
     fun `test register returns conflict when username already exists`() {
-        val registerRequest = RegisterRequest("existinguser", "password")
+        val registerRequest = RegisterRequest("existinguser", "password123")
 
         whenever(userRepository.existsByUsername("existinguser")).thenReturn(true)
 
         val response = authController.register(registerRequest)
 
         assertEquals(HttpStatus.CONFLICT, response.statusCode)
-        assertNull(response.body)
+        assertNotNull(response.body) // Ahora retorna ErrorResponse
         verify(userRepository, never()).save(any())
         verify(passwordEncoder, never()).encode(any())
     }
@@ -181,8 +183,10 @@ class AuthControllerTest {
         val response1 = authController.authenticate(user1Request)
         val response2 = authController.authenticate(user2Request)
 
-        assertEquals("token1", response1.body!!.token)
-        assertEquals("token2", response2.body!!.token)
+        val authResponse1 = response1.body as AuthResponse
+        val authResponse2 = response2.body as AuthResponse
+        assertEquals("token1", authResponse1.token)
+        assertEquals("token2", authResponse2.token)
     }
 }
 

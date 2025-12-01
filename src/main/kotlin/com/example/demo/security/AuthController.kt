@@ -1,5 +1,6 @@
 package com.example.demo.security
 
+import com.example.demo.model.ErrorResponse
 import com.example.demo.model.User
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -35,7 +36,16 @@ class AuthController(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = AuthResponse::class),
                 examples = [ExampleObject(value = """{"token": "string"}""")]
             )]),
-        ApiResponse(responseCode = "401", description = "Invalid credentials")
+        ApiResponse(responseCode = "400", description = "Bad request - Invalid credentials format",
+            content = [Content(mediaType = "application/json",
+                schema = Schema(implementation = ErrorResponse::class),
+                examples = [ExampleObject(value = """{"error": "Bad Request", "message": "Username and password are required", "status": 400}""")]
+            )]),
+        ApiResponse(responseCode = "401", description = "Unauthorized - Invalid credentials",
+            content = [Content(mediaType = "application/json",
+                schema = Schema(implementation = ErrorResponse::class),
+                examples = [ExampleObject(value = """{"error": "Unauthorized", "message": "Invalid username or password", "status": 401}""")]
+            )])
     ])
     @PostMapping("/login")
     fun authenticate(
@@ -49,7 +59,12 @@ class AuthController(
             )]
         )
         @RequestBody request: AuthRequest
-    ): ResponseEntity<AuthResponse> {
+    ): ResponseEntity<Any> {
+        if (request.username.isBlank() || request.password.isBlank()) {
+            return ResponseEntity.badRequest().body(
+                ErrorResponse("Bad Request", "Username and password are required", 400)
+            )
+        }
         try {
             val authToken = UsernamePasswordAuthenticationToken(request.username, request.password)
             authenticationManager.authenticate(authToken)
@@ -59,9 +74,17 @@ class AuthController(
 
             return ResponseEntity.ok(AuthResponse(token))
         } catch (e: BadCredentialsException) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                ErrorResponse("Unauthorized", "Invalid username or password", 401)
+            )
         } catch (e: UsernameNotFoundException) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                ErrorResponse("Unauthorized", "Invalid username or password", 401)
+            )
+        } catch (e: Exception) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                ErrorResponse("Internal Server Error", "Authentication error: ${e.message}", 500)
+            )
         }
     }
 
@@ -71,7 +94,16 @@ class AuthController(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = AuthResponse::class),
                 examples = [ExampleObject(value = """{"token": "string"}""")]
             )]),
-        ApiResponse(responseCode = "409", description = "Username already exists")
+        ApiResponse(responseCode = "400", description = "Bad request - Invalid registration data",
+            content = [Content(mediaType = "application/json",
+                schema = Schema(implementation = ErrorResponse::class),
+                examples = [ExampleObject(value = """{"error": "Bad Request", "message": "Username and password are required", "status": 400}""")]
+            )]),
+        ApiResponse(responseCode = "409", description = "Conflict - Username already exists",
+            content = [Content(mediaType = "application/json",
+                schema = Schema(implementation = ErrorResponse::class),
+                examples = [ExampleObject(value = """{"error": "Conflict", "message": "Username already exists", "status": 409}""")]
+            )])
     ])
     @PostMapping("/register")
     fun register(
@@ -85,18 +117,36 @@ class AuthController(
             )]
         )
         @RequestBody req: RegisterRequest
-    ): ResponseEntity<AuthResponse> {
+    ): ResponseEntity<Any> {
+        if (req.username.isBlank() || req.password.isBlank()) {
+            return ResponseEntity.badRequest().body(
+                ErrorResponse("Bad Request", "Username and password are required", 400)
+            )
+        }
+        if (req.password.length < 6) {
+            return ResponseEntity.badRequest().body(
+                ErrorResponse("Bad Request", "Password must be at least 6 characters long", 400)
+            )
+        }
         if (userRepository.existsByUsername(req.username)) {
-            return ResponseEntity.status(409).build()
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                ErrorResponse("Conflict", "Username already exists", 409)
+            )
         }
 
-        val hashed = passwordEncoder.encode(req.password)
-        val user = User(username = req.username, password = hashed)
-        userRepository.save(user)
+        return try {
+            val hashed = passwordEncoder.encode(req.password)
+            val user = User(username = req.username, password = hashed)
+            userRepository.save(user)
 
-        val userDetails = userDetailsService.loadUserByUsername(user.username)
-        val token = jwtService.generateToken(userDetails)
-        return ResponseEntity.ok(AuthResponse(token))
+            val userDetails = userDetailsService.loadUserByUsername(user.username)
+            val token = jwtService.generateToken(userDetails)
+            ResponseEntity.ok(AuthResponse(token))
+        } catch (e: Exception) {
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                ErrorResponse("Internal Server Error", "Registration error: ${e.message}", 500)
+            )
+        }
     }
 }
 

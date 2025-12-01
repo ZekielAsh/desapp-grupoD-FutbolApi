@@ -75,8 +75,8 @@ class PlayerControllerTest {
 
         val response = playerController.getPlayerStats(playerId, playerName)
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-        assertTrue(response.body.toString().contains("Error retrieving player stats"))
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
+        assertNotNull(response.body)
     }
 
     @Test

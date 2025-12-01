@@ -38,8 +38,9 @@ class WhoScoredControllerTest {
 
         assertEquals(HttpStatus.OK, result.statusCode)
         assertNotNull(result.body)
-        assertEquals("Barcelona", result.body!!.team)
-        assertEquals(2, result.body!!.players.size)
+        val teamResponse = result.body as TeamPlayersResponse
+        assertEquals("Barcelona", teamResponse.team)
+        assertEquals(2, teamResponse.players.size)
         verify(teamService).getTeamPlayersByName(teamName)
     }
 
@@ -54,7 +55,8 @@ class WhoScoredControllerTest {
 
         assertEquals(HttpStatus.OK, result.statusCode)
         assertNotNull(result.body)
-        assertTrue(result.body!!.players.isEmpty())
+        val teamResponse = result.body as TeamPlayersResponse
+        assertTrue(teamResponse.players.isEmpty())
     }
 
     @Test
@@ -66,8 +68,8 @@ class WhoScoredControllerTest {
 
         val result = whoScoredController.getTeamPlayers(teamName)
 
-        assertEquals(HttpStatus.BAD_REQUEST, result.statusCode)
-        assertNull(result.body)
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.statusCode)
+        assertNotNull(result.body)
     }
 
     @Test
@@ -83,7 +85,8 @@ class WhoScoredControllerTest {
         val result = whoScoredController.getTeamPlayers(teamName)
 
         assertEquals(HttpStatus.OK, result.statusCode)
-        assertEquals(teamName, result.body!!.team)
+        val teamResponse = result.body as TeamPlayersResponse
+        assertEquals(teamName, teamResponse.team)
     }
 
     @Test
@@ -102,9 +105,10 @@ class WhoScoredControllerTest {
         val result = whoScoredController.getTeamPlayers(teamName)
 
         assertEquals(HttpStatus.OK, result.statusCode)
-        assertEquals(4, result.body!!.players.size)
-        assertEquals(30, result.body!!.players[0].goals)
-        assertEquals(0, result.body!!.players[3].goals)
+        val teamResponse = result.body as TeamPlayersResponse
+        assertEquals(4, teamResponse.players.size)
+        assertEquals(30, teamResponse.players[0].goals)
+        assertEquals(0, teamResponse.players[3].goals)
     }
 
     @Test

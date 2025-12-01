@@ -1,5 +1,6 @@
 package com.example.demo.controller
 
+import com.example.demo.model.ErrorResponse
 import com.example.demo.model.PlayerAdvancedMetrics
 import com.example.demo.model.TeamAdvancedMetrics
 import com.example.demo.service.AdvancedMetricsService
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -78,10 +80,35 @@ class AdvancedMetricsController(
             )]),
         ApiResponse(
             responseCode = "400",
-            description = "Invalid request",
+            description = "Bad request - Invalid team ID",
             content = [Content(
                 mediaType = "application/json",
-                examples = [ExampleObject(value = """"Error retrieving team metrics: string"""")]
+                schema = Schema(implementation = ErrorResponse::class),
+                examples = [ExampleObject(value = """{"error": "Bad Request", "message": "Invalid team ID provided", "status": 400}""")]
+            )]),
+        ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized - Authentication required",
+            content = [Content(
+                mediaType = "application/json",
+                schema = Schema(implementation = ErrorResponse::class),
+                examples = [ExampleObject(value = """{"error": "Unauthorized", "message": "Authentication required. Please provide a valid Bearer token", "status": 401}""")]
+            )]),
+        ApiResponse(
+            responseCode = "403",
+            description = "Forbidden - Invalid or expired token",
+            content = [Content(
+                mediaType = "application/json",
+                schema = Schema(implementation = ErrorResponse::class),
+                examples = [ExampleObject(value = """{"error": "Forbidden", "message": "Invalid or expired token", "status": 403}""")]
+            )]),
+        ApiResponse(
+            responseCode = "404",
+            description = "Team not found",
+            content = [Content(
+                mediaType = "application/json",
+                schema = Schema(implementation = ErrorResponse::class),
+                examples = [ExampleObject(value = """{"error": "Not Found", "message": "Team not found", "status": 404}""")]
             )])
     ])
     @GetMapping("/teams/{id}")
@@ -89,11 +116,26 @@ class AdvancedMetricsController(
         @Parameter(description = "Team ID", required = true, example = "86")
         @PathVariable id: Long
     ): ResponseEntity<Any> {
+        if (id <= 0) {
+            return ResponseEntity.badRequest().body(
+                ErrorResponse("Bad Request", "Invalid team ID provided", 400)
+            )
+        }
         return try {
             val metrics = advancedMetricsService.getTeamAdvancedMetrics(id)
             ResponseEntity.ok(metrics)
+        } catch (e: NoSuchElementException) {
+            ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                ErrorResponse("Not Found", "Team not found", 404)
+            )
+        } catch (e: IllegalArgumentException) {
+            ResponseEntity.badRequest().body(
+                ErrorResponse("Bad Request", e.message ?: "Invalid request", 400)
+            )
         } catch (e: Exception) {
-            ResponseEntity.badRequest().body("Error retrieving team metrics: ${e.message}")
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                ErrorResponse("Internal Server Error", "Error retrieving team metrics: ${e.message}", 500)
+            )
         }
     }
 
@@ -144,10 +186,35 @@ class AdvancedMetricsController(
             )]),
         ApiResponse(
             responseCode = "400",
-            description = "Invalid request",
+            description = "Bad request - Invalid player data",
             content = [Content(
                 mediaType = "application/json",
-                examples = [ExampleObject(value = """"Error retrieving player metrics: string"""")]
+                schema = Schema(implementation = ErrorResponse::class),
+                examples = [ExampleObject(value = """{"error": "Bad Request", "message": "Invalid player ID or name provided", "status": 400}""")]
+            )]),
+        ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized - Authentication required",
+            content = [Content(
+                mediaType = "application/json",
+                schema = Schema(implementation = ErrorResponse::class),
+                examples = [ExampleObject(value = """{"error": "Unauthorized", "message": "Authentication required. Please provide a valid Bearer token", "status": 401}""")]
+            )]),
+        ApiResponse(
+            responseCode = "403",
+            description = "Forbidden - Invalid or expired token",
+            content = [Content(
+                mediaType = "application/json",
+                schema = Schema(implementation = ErrorResponse::class),
+                examples = [ExampleObject(value = """{"error": "Forbidden", "message": "Invalid or expired token", "status": 403}""")]
+            )]),
+        ApiResponse(
+            responseCode = "404",
+            description = "Player not found",
+            content = [Content(
+                mediaType = "application/json",
+                schema = Schema(implementation = ErrorResponse::class),
+                examples = [ExampleObject(value = """{"error": "Not Found", "message": "Player not found", "status": 404}""")]
             )])
     ])
     @GetMapping("/players/{id}/{name}")
@@ -157,11 +224,26 @@ class AdvancedMetricsController(
         @Parameter(description = "Player name", required = true, example = "Lionel-Messi")
         @PathVariable name: String
     ): ResponseEntity<Any> {
+        if (id.isBlank() || name.isBlank()) {
+            return ResponseEntity.badRequest().body(
+                ErrorResponse("Bad Request", "Invalid player ID or name provided", 400)
+            )
+        }
         return try {
             val metrics = advancedMetricsService.getPlayerAdvancedMetrics(id, name)
             ResponseEntity.ok(metrics)
+        } catch (e: NoSuchElementException) {
+            ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                ErrorResponse("Not Found", "Player not found", 404)
+            )
+        } catch (e: IllegalArgumentException) {
+            ResponseEntity.badRequest().body(
+                ErrorResponse("Bad Request", e.message ?: "Invalid request", 400)
+            )
         } catch (e: Exception) {
-            ResponseEntity.badRequest().body("Error retrieving player metrics: ${e.message}")
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                ErrorResponse("Internal Server Error", "Error retrieving player metrics: ${e.message}", 500)
+            )
         }
     }
 }

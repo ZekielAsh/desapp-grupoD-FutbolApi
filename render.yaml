@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: futbol-api
+    env: docker
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PORT
+        value: 8080
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION
+        value: 86400000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: futbol-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: futbol-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: futbol-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: futbol-db
+          property: password
+
+databases:
+  - name: futbol-db
+    plan: free
+    databaseName: futboldb
+    user: futboluser
+

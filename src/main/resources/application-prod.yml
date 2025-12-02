@@ -1,0 +1,85 @@
+# Production Configuration
+spring:
+  profiles:
+    active: prod
+
+  # Database configuration (will be overridden by environment variables)
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/futboldb}
+    username: ${DATABASE_USERNAME:futboluser}
+    password: ${DATABASE_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  # Server Configuration
+server:
+  port: ${PORT:8080}
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: never
+    include-exception: false
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:your-secret-key-here-change-in-production}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.example.demo: INFO
+    org.springframework.security: WARN
+    org.hibernate: WARN
+  file:
+    name: logs/application.log
+    max-size: 10MB
+    max-history: 30
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# CORS Configuration (adjust origins as needed)
+cors:
+  allowed-origins: ${CORS_ORIGINS:https://your-frontend.com,http://localhost:3000}
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
+

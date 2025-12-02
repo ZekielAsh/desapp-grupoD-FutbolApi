@@ -1,0 +1,52 @@
+# Build artifacts
+build/
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# Gradle
+.gradle/
+gradle-wrapper.jar
+
+# IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Documentation
+*.md
+docs/
+
+# Tests
+src/test/
+

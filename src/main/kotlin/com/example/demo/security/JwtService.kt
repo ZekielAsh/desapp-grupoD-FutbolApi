@@ -15,6 +15,9 @@ class JwtService {
     @Value("\${jwt.secret}")
     private lateinit var secretKey: String
 
+    @Value("\${jwt.expiration:86400000}") // Default: 24 hours in milliseconds
+    private var jwtExpiration: Long = 86400000
+
     fun extractUsername(token: String): String? =
         extractClaim(token) { it.subject }
 
@@ -41,7 +44,7 @@ class JwtService {
 
     private fun createToken(claims: Map<String, Any>, subject: String): String {
         val now = Date()
-        val validity = Date(now.time + 1000 * 60 * 60 * 10) // 10 horas
+        val validity = Date(now.time + jwtExpiration)
 
         return Jwts.builder()
             .setClaims(claims)
@@ -51,7 +54,6 @@ class JwtService {
             .signWith(Keys.hmacShaKeyFor(secretKey.toByteArray()), SignatureAlgorithm.HS256)
             .compact()
     }
-
     private fun extractAllClaims(token: String): Claims =
         Jwts.parserBuilder()
             .setSigningKey(secretKey.toByteArray())

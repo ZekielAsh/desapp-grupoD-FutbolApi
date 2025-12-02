@@ -16,11 +16,16 @@ class PackageDependencyTest {
     val `controllers only depend on services and models` =
         classes()
             .that().resideInAPackage("..controller..")
+            .and().areNotAnonymousClasses()
+            .and().areNotLocalClasses()
+            .and().haveSimpleNameNotContaining("$")  // Exclude Kotlin synthetic classes (lambdas)
             .should().onlyDependOnClassesThat()
             .resideInAnyPackage(
                 "..service..",
                 "..model..",
                 "..config..",
+                "..helpers..",  // Allow helpers package for annotations
+                "..controller..",  // Allow controllers to access their own inner/lambda classes
                 "org.springframework..",
                 "io.swagger..",
                 "jakarta..",
@@ -71,5 +76,8 @@ class PackageDependencyTest {
     val `rest controller has RestController annotation` =
         classes()
             .that().resideInAPackage("..controller..")
+            .and().areNotAnonymousClasses()
+            .and().areNotLocalClasses()
+            .and().haveSimpleNameNotContaining("$")  // Exclude Kotlin synthetic classes (lambdas, companions)
             .should().beAnnotatedWith(org.springframework.web.bind.annotation.RestController::class.java)
 }

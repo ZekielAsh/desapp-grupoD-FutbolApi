@@ -13,11 +13,13 @@ class JwtServiceTest {
 
     private lateinit var jwtService: JwtService
     private val secretKey = "mySecretKeyThatIsLongEnoughForHS256AlgorithmToWork"
+    private val jwtExpiration = 86400000L // 24 hours in milliseconds
 
     @BeforeEach
     fun setup() {
         jwtService = JwtService()
         ReflectionTestUtils.setField(jwtService, "secretKey", secretKey)
+        ReflectionTestUtils.setField(jwtService, "jwtExpiration", jwtExpiration)
     }
 
     @Test
@@ -103,12 +105,12 @@ class JwtServiceTest {
         val expiration = jwtService.extractClaim(token) { it.expiration }
         val expirationTime = expiration.time
 
-        // Token should expire in 10 hours (36000000 ms)
-        val tenHoursInMs = 10 * 60 * 60 * 1000L
+        // Token should expire in 24 hours (86400000 ms)
+        val twentyFourHoursInMs = 24 * 60 * 60 * 1000L // 86400000
         val buffer = 1000L // 1 second buffer for timing differences
 
-        val expectedMinExpiration = beforeGeneration + tenHoursInMs - buffer
-        val expectedMaxExpiration = afterGeneration + tenHoursInMs + buffer
+        val expectedMinExpiration = beforeGeneration + twentyFourHoursInMs - buffer
+        val expectedMaxExpiration = afterGeneration + twentyFourHoursInMs + buffer
 
         assertTrue(expirationTime >= expectedMinExpiration,
             "Expiration time $expirationTime should be >= $expectedMinExpiration")

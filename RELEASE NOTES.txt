@@ -1,0 +1,13 @@
+---------------------------------------------------------------------
+TAG 3.0.0
+---------------------------------------------------------------------
+NEW FEATURES:
+* Endpoint de comparación estatistica entre dos equipos
+* Endpoint de calculo de metricas avanzadas para un equipo
+
+FIXED BUGS:
+* Endpoint de predicción de partidos ya no retorna resultados con números negativos.
+
+NOTES:
+* Deploy en Render esta inoperativo
+* Algunos endpoints utilizan "id" y "nombre" al recopilar información, en lugar de uno u otro

@@ -1,9 +1,7 @@
 # Production Configuration
-spring:
-  profiles:
-    active: prod
 
-  # Database configuration (will be overridden by environment variables)
+# Database configuration (will be overridden by environment variables)
+spring:
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/futboldb}
     username: ${DATABASE_USERNAME:futboluser}
@@ -29,7 +27,7 @@ spring:
           lob:
             non_contextual_creation: true
 
-  # Server Configuration
+# Server Configuration
 server:
   port: ${PORT:8080}
   compression:

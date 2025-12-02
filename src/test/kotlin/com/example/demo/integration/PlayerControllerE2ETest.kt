@@ -1,5 +1,6 @@
 package com.example.demo.integration
 
+import com.example.demo.config.TestSecurityConfig
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -15,7 +16,7 @@ import org.springframework.test.context.ActiveProfiles
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @ActiveProfiles("test")
-@Import(E2eTestConfig::class)
+@Import(E2eTestConfig::class, TestSecurityConfig::class)
 class PlayerControllerE2eTest {
 
     @LocalServerPort

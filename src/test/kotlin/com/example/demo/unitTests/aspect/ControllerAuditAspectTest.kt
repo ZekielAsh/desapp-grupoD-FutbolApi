@@ -59,6 +59,7 @@ class ControllerAuditAspectTest {
         verify(apiAuditService).logApiCall(logCaptor.capture())
 
         val capturedLog = logCaptor.firstValue
+        assertEquals("anonymous", capturedLog.username) // Sin autenticación, debería ser anonymous
         assertEquals("GET", capturedLog.httpMethod)
         assertEquals("/api/teams", capturedLog.path)
         assertEquals("ControllerAuditAspectTest", capturedLog.controllerName)

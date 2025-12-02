@@ -1,4 +1,4 @@
-package com.example.demo.e2e
+package com.example.demo.integration
 
 import com.example.demo.model.football.MatchDto
 import com.example.demo.model.football.PlayerDto

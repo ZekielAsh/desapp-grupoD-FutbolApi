@@ -9,7 +9,8 @@ data class ApiAuditLog(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
-    val httpMethod: String = "", 
+    val username: String = "anonymous", // Usuario autenticado que realizó la petición
+    val httpMethod: String = "",
     val path: String = "", 
     val controllerName: String = "", 
     val methodName: String = "", 

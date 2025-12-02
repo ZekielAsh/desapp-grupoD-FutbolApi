@@ -1,6 +1,5 @@
 package com.example.demo.integration
 
-import com.example.demo.config.TestSecurityConfig
 import com.example.demo.model.football.MatchDto
 import com.example.demo.model.football.PlayerDto
 import org.junit.jupiter.api.Assertions.*
@@ -10,14 +9,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.test.web.server.LocalServerPort
-import org.springframework.context.annotation.Import
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.*
 import org.springframework.test.context.ActiveProfiles
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Import(TestSecurityConfig::class)
 class TeamControllerE2eTest {
 
     @LocalServerPort

@@ -20,7 +20,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@Profile("!test")
 
 class SecurityConfig(
     private val jwtAuthFilter: JwtAuthenticationFilter,

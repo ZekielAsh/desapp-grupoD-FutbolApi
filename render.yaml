@@ -17,18 +17,18 @@ services:
         fromDatabase:
           name: futbol-db
           property: connectionString
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: futbol-db
-          property: connectionString
-      - key: SPRING_DATASOURCE_USERNAME
+      - key: DATABASE_USERNAME
         fromDatabase:
           name: futbol-db
           property: user
-      - key: SPRING_DATASOURCE_PASSWORD
+      - key: DATABASE_PASSWORD
         fromDatabase:
           name: futbol-db
           property: password
+      - key: DATABASE_DRIVER
+        value: org.postgresql.Driver
+      - key: DDL_AUTO
+        value: update
 
 databases:
   - name: futbol-db
